@@ -29,6 +29,7 @@ func (generic) Middleware(next http.Handler) http.Handler {
 		ctx := r.Context()
 
 		server := ctx.Value(keystore.Keys().Server()).(string)
+
 		// --> benefit of interfaces is avoiding cyclic dependencies.
 		mux := ctx.Value(http.ServerContextKey).(*http.Server).Handler.(interface {
 			Pattern(r *http.Request) string
@@ -44,7 +45,15 @@ func (generic) Middleware(next http.Handler) http.Handler {
 			ctx = context.WithValue(ctx, key, value)
 		}
 
-		handler := otelhttp.NewHandler(otelhttp.WithRouteTag(pattern, next), pattern, otelhttp.WithServerName(server))
+		handler := otelhttp.NewHandler(otelhttp.WithRouteTag(pattern, next), pattern, otelhttp.WithServerName(server), otelhttp.WithFilter(func(request *http.Request) (filter bool) {
+			if request.URL.Path == "/health" {
+				filter = true
+
+				slog.Log(ctx, logging.Trace, "Health Telemetry Exclusion", slog.Bool("filter", filter))
+			}
+
+			return
+		}))
 
 		handler.ServeHTTP(w, r)
 	})
