@@ -66,6 +66,9 @@ func Specification() *Options {
 					"Sec-Fetch-Dest",
 					"User-Agent", // @TODO conditionally evaluate later
 					"X-Forwarded-Client-Cert",
+					"X-Forwarded-For",
+					"X-Forwarded-Proto",
+					"X-Request-ID",
 					"Traceparent",
 					"Tracestate",
 					"X-Envoy-Attempt-Count",
