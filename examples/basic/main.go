@@ -100,7 +100,7 @@ func main() {
 		return
 	})
 
-	mux.Register("GET /{version}/{service}", func(w http.ResponseWriter, r *http.Request) {
+	mux.Register(fmt.Sprintf("GET /%s/%s", version, service), func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := tracer.Start(r.Context(), "example")
 
 		defer span.End()
