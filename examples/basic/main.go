@@ -7,13 +7,14 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
-	"math/rand"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 	"time"
+
+	"go.opentelemetry.io/otel/trace"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -99,20 +100,43 @@ func main() {
 		return
 	})
 
-	mux.Register("GET /timeout", func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+	mux.Register("GET /{version}/{service}", func(w http.ResponseWriter, r *http.Request) {
+		ctx, span := tracer.Start(r.Context(), "example")
 
-		process := time.Duration(rand.Intn(5)) * time.Second
+		defer span.End()
+
+		channel := make(chan map[string]interface{}, 1)
+		var process = func(ctx context.Context, span trace.Span, c chan map[string]interface{}) {
+			path := middleware.New().Path().Value(ctx)
+
+			var payload = map[string]interface{}{
+				middleware.New().Service().Value(ctx): map[string]interface{}{
+					"path":        path,
+					"service":     middleware.New().Service().Value(ctx),
+					"version":     middleware.New().Version().Value(ctx).Service,
+					"api-version": middleware.New().Version().Value(ctx).API,
+				},
+			}
+
+			span.SetAttributes(attribute.String("path", path))
+
+			c <- payload
+		}
+
+		go process(ctx, span, channel)
 
 		select {
 		case <-ctx.Done():
 			return
+		case payload := <-channel:
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
+			w.WriteHeader(http.StatusOK)
 
-		case <-time.After(process):
-			// The above channel simulates some hard work.
+			json.NewEncoder(w).Encode(payload)
+
+			return
 		}
-
-		w.Write([]byte("done"))
 	})
 
 	// Start the HTTP server

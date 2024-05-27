@@ -36,12 +36,20 @@ import (
     "os"
     "path/filepath"
     "runtime"
+    "time"
+
+    "go.opentelemetry.io/otel/trace"
+
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/codes"
 
     "github.com/x-ethr/server"
     "github.com/x-ethr/server/logging"
     "github.com/x-ethr/server/middleware"
     "github.com/x-ethr/server/middleware/name"
     "github.com/x-ethr/server/middleware/servername"
+    "github.com/x-ethr/server/middleware/timeout"
     "github.com/x-ethr/server/middleware/versioning"
     "github.com/x-ethr/server/telemetry"
 )
@@ -66,30 +74,22 @@ var (
 )
 
 func main() {
-    // Create Handler Instance
+    // Create an instance of the custom handler
     mux := server.New()
 
-    // Setup Middleware(s)
-
-    // --> Initialize Path Middleware
     mux.Middleware(middleware.New().Path().Middleware)
-
-    // --> Initialize Timeout Middleware
     mux.Middleware(middleware.New().Timeout().Configuration(func(options *timeout.Settings) {
-        options.Timeout = time.Second * 3
+        options.Timeout = 3 * time.Second
     }).Middleware)
 
-    // --> Initialize Server-Name Middleware
     mux.Middleware(middleware.New().Server().Configuration(func(options *servername.Settings) {
         options.Server = header
     }).Middleware)
 
-    // --> Initialize Service-Name Middleware
     mux.Middleware(middleware.New().Service().Configuration(func(options *name.Settings) {
         options.Service = service
     }).Middleware)
 
-    // --> Initialize Versioning Middleware
     mux.Middleware(middleware.New().Version().Configuration(func(options *versioning.Settings) {
         options.Version.API = os.Getenv("VERSION")
         if options.Version.API == "" && os.Getenv("CI") == "" {
@@ -99,10 +99,9 @@ func main() {
         options.Version.Service = version
     }).Middleware)
 
-    // --> Initialize Telemetry Middleware
     mux.Middleware(middleware.New().Telemetry().Middleware)
 
-    // Establish Route(s)
+    // Use the custom handler in the HTTP server
     mux.Register("GET /", func(w http.ResponseWriter, r *http.Request) {
         ctx, span := tracer.Start(r.Context(), "example")
         defer span.End()
@@ -125,34 +124,63 @@ func main() {
         return
     })
 
-    // --> Example Timeout Usage
-    mux.Register("GET /timeout", func(w http.ResponseWriter, r *http.Request) {
-        ctx := r.Context()
+    mux.Register("GET /{version}/{service}", func(w http.ResponseWriter, r *http.Request) {
+        ctx, span := tracer.Start(r.Context(), "example")
 
-        process := time.Duration(rand.Intn(5)) * time.Second
+        defer span.End()
+
+        channel := make(chan map[string]interface{}, 1)
+        var process = func(ctx context.Context, span trace.Span, c chan map[string]interface{}) {
+            path := middleware.New().Path().Value(ctx)
+
+            var payload = map[string]interface{}{
+                middleware.New().Service().Value(ctx): map[string]interface{}{
+                    "path":        path,
+                    "service":     middleware.New().Service().Value(ctx),
+                    "version":     middleware.New().Version().Value(ctx).Service,
+                    "api-version": middleware.New().Version().Value(ctx).API,
+                },
+            }
+
+            span.SetAttributes(attribute.String("path", path))
+
+            c <- payload
+        }
+
+        go process(ctx, span, channel)
 
         select {
         case <-ctx.Done():
             return
+        case payload := <-channel:
+            w.Header().Set("Content-Type", "application/json")
+            w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
+            w.WriteHeader(http.StatusOK)
 
-        case <-time.After(process):
-            // The above channel simulates some hard work.
+            json.NewEncoder(w).Encode(payload)
+
+            return
         }
-
-        w.Write([]byte("done"))
     })
 
-    // Start the HTTP Server
+    // Start the HTTP server
     slog.Info("Starting Server ...", slog.String("local", fmt.Sprintf("http://localhost:%s", *(port))))
 
-    // --> Initialize Server Instance
     api := server.Server(ctx, mux, *port)
 
-    // --> Issue Cancellation Handler
+    // Issue Cancellation Handler
     server.Interrupt(ctx, cancel, api)
 
-    // --> Setup Telemetry
-    shutdown, e := telemetry.Setup(ctx, service, version)
+    // Telemetry Setup
+    shutdown, e := telemetry.Setup(ctx, service, version, func(options *telemetry.Settings) {
+        if version == "development" && os.Getenv("CI") == "" {
+            options.Zipkin.Enabled = false
+
+            options.Tracer.Local = true
+            options.Metrics.Local = true
+            options.Logs.Local = true
+        }
+    })
     if e != nil {
         panic(e)
     }
@@ -161,14 +189,14 @@ func main() {
         e = errors.Join(e, shutdown(ctx))
     }()
 
-    // <-- Blocking: Begin the Server Listener
+    // <-- Blocking
     if e := api.ListenAndServe(); e != nil && !(errors.Is(e, http.ErrServerClosed)) {
         slog.ErrorContext(ctx, "Error During Server's Listen & Serve Call ...", slog.String("error", e.Error()))
 
         os.Exit(100)
     }
 
-    // --> Exit: End the Program Upon Signal
+    // --> Exit
     {
         slog.InfoContext(ctx, "Graceful Shutdown Complete")
 
