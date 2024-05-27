@@ -67,7 +67,11 @@ func New(settings ...Variadic) *Mux {
 		configuration(o)
 	}
 
-	return &Mux{options: o, hosts: make(map[Host]map[Path]map[Method]*Multiplexer), routes: make(map[Path]map[Method]*Multiplexer)}
+	mux := &Mux{options: o, hosts: make(map[Host]map[Path]map[Method]*Multiplexer), routes: make(map[Path]map[Method]*Multiplexer)}
+
+	mux.Handle("GET /health", Health)
+
+	return mux
 }
 
 // Multiplexer represents a type that handles HTTP requests by routing them based on the provided host, path, and method.
