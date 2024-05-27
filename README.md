@@ -31,18 +31,11 @@ import (
     "flag"
     "fmt"
     "log/slog"
-    "net"
     "net/http"
     "os"
     "path/filepath"
     "runtime"
     "time"
-
-    "go.opentelemetry.io/otel/trace"
-
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-    "go.opentelemetry.io/otel/codes"
 
     "github.com/x-ethr/server"
     "github.com/x-ethr/server/logging"
@@ -52,6 +45,10 @@ import (
     "github.com/x-ethr/server/middleware/timeout"
     "github.com/x-ethr/server/middleware/versioning"
     "github.com/x-ethr/server/telemetry"
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+
+    "go.opentelemetry.io/otel/trace"
 )
 
 // header is a dynamically linked string value - defaults to "server" - which represents the server name.
@@ -62,6 +59,10 @@ var service string = "service"
 
 // version is a dynamically linked string value - defaults to "development" - which represents the service's version.
 var version string = "development" // production builds have version dynamically linked
+
+var prefix = map[string]string{
+    (version): "v1", // default version prefix
+}
 
 // ctx, cancel represent the server's runtime context and cancellation handler.
 var ctx, cancel = context.WithCancel(context.Background())
@@ -79,7 +80,7 @@ func main() {
 
     mux.Middleware(middleware.New().Path().Middleware)
     mux.Middleware(middleware.New().Timeout().Configuration(func(options *timeout.Settings) {
-        options.Timeout = 3 * time.Second
+        options.Timeout = 30 * time.Second
     }).Middleware)
 
     mux.Middleware(middleware.New().Server().Configuration(func(options *servername.Settings) {
@@ -101,30 +102,7 @@ func main() {
 
     mux.Middleware(middleware.New().Telemetry().Middleware)
 
-    // Use the custom handler in the HTTP server
-    mux.Register("GET /", func(w http.ResponseWriter, r *http.Request) {
-        ctx, span := tracer.Start(r.Context(), "example")
-        defer span.End()
-
-        path := middleware.New().Path().Value(ctx)
-
-        local := ctx.Value(http.LocalAddrContextKey).(net.Addr)
-        output := map[string]interface{}{
-            "path":  path,
-            "local": local,
-        }
-
-        span.SetAttributes(attribute.String("path", path))
-
-        span.SetStatus(codes.Ok, "successful http response")
-
-        w.Header().Set("Content-Type", "application/json")
-        w.WriteHeader(http.StatusOK)
-        json.NewEncoder(w).Encode(output)
-        return
-    })
-
-    mux.Register(fmt.Sprintf("GET /%s/%s", version, service), func(w http.ResponseWriter, r *http.Request) {
+    mux.Register(fmt.Sprintf("GET /%s/%s", prefix[version], service), func(w http.ResponseWriter, r *http.Request) {
         ctx, span := tracer.Start(r.Context(), "example")
 
         defer span.End()
