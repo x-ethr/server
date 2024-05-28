@@ -36,9 +36,7 @@ func (g *generic) Middleware(next http.Handler) http.Handler {
 	if g.options == nil {
 
 	}
-	var name = text.Title(key.String(), func(o *text.Options) {
-		o.Log = true
-	})
+	var name = key.String()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
