@@ -6,7 +6,6 @@ import (
 )
 
 type Version struct {
-	API     string `json:"api" yaml:"api"`
 	Service string `json:"service" yaml:"service"`
 }
 

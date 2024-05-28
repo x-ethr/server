@@ -22,7 +22,7 @@ func (*generic) Value(ctx context.Context) Version {
 		return v
 	}
 
-	return Version{API: "N/A", Service: "N/A"}
+	return Version{Service: "development"}
 }
 
 func (g *generic) Configuration(options ...Variadic) Implementation {
@@ -47,14 +47,16 @@ func (g *generic) Middleware(next http.Handler) http.Handler {
 		{
 			value := g.options.Version
 
-			api, service := value.API, value.Service
+			service := value.Service
 
-			slog.Log(ctx, logging.Trace, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.Any("value", map[string]string{"api": api, "service": service})))
+			slog.Log(ctx, logging.Trace, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.Any("value", map[string]string{"service": service})))
 
 			ctx = context.WithValue(ctx, key, value)
 
-			w.Header().Set("X-API-Version", api)
 			w.Header().Set("X-Service-Version", service)
+			if v := r.Header.Get(http.CanonicalHeaderKey("X-API-Version")); v != "" {
+				w.Header().Set("X-API-Version", v)
+			}
 		}
 
 		next.ServeHTTP(w, r.WithContext(ctx))
