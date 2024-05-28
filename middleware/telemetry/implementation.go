@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -28,6 +29,9 @@ func (generic) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		server := ctx.Value(keystore.Keys().Server()).(string)
+		service := ctx.Value(keystore.Keys().Service()).(string)
+
 		// --> benefit of interfaces includes avoiding cyclic dependencies.
 		mux := ctx.Value(http.ServerContextKey).(*http.Server).Handler.(interface {
 			Pattern(r *http.Request) string
@@ -43,19 +47,18 @@ func (generic) Middleware(next http.Handler) http.Handler {
 			ctx = context.WithValue(ctx, key, value)
 		}
 
-		// handler := otelhttp.NewHandler(otelhttp.WithRouteTag(pattern, next), pattern, otelhttp.WithServerName(server), otelhttp.WithFilter(func(request *http.Request) (filter bool) {
-		// 	ctx := request.Context()
-		//
-		// 	if request.URL.Path == "/health" {
-		// 		filter = true
-		//
-		// 		slog.Log(ctx, logging.Trace, "Health Telemetry Exclusion", slog.Bool("filter", filter))
-		// 	}
-		//
-		// 	return
-		// }))
+		servername := fmt.Sprintf("%s-%s", server, service)
+		handler := otelhttp.NewHandler(otelhttp.WithRouteTag(pattern, next), pattern, otelhttp.WithServerName(servername), otelhttp.WithFilter(func(request *http.Request) (filter bool) {
+			ctx := request.Context()
 
-		handler := otelhttp.WithRouteTag(pattern, next)
+			if request.URL.Path == "/health" {
+				filter = true
+
+				slog.Log(ctx, logging.Trace, "Health Telemetry Exclusion", slog.Bool("filter", filter))
+			}
+
+			return
+		}))
 
 		handler.ServeHTTP(w, r)
 	})

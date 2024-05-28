@@ -58,7 +58,7 @@ type Logs struct {
 	// Defaults:
 	//
 	// 	- otlploghttp.WithInsecure()
-	// 	- otlploghttp.WithEndpoint("opentelemetry-collector.observability.svc.cluster.local:4318")
+	// 	- otlploghttp.WithEndpoint("http://zipkin.istio-system.svc.cluster.local:9411")
 	Options []otlploghttp.Option
 
 	// Debugger configures an additional [stdoutlog.Exporter] if not nil. Defaults nil.
@@ -95,7 +95,7 @@ type Variadic keystore.Variadic[Settings]
 func Options() *Settings {
 	return &Settings{
 		Zipkin: &Zipkin{
-			URL:     "http://opentelemetry-collector.observability.svc.cluster.local:9441",
+			URL:     "http://zipkin.istio-system.svc.cluster.local:9411",
 			Enabled: true,
 		},
 		Metrics: &Metrics{
