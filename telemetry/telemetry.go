@@ -25,7 +25,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 )
 
-func Resources(ctx context.Context, service, version string) (*resource.Resource, error) {
+func Resources(ctx context.Context, service, version string) *resource.Resource {
 	options := []resource.Option{
 		resource.WithFromEnv(),      // Discover and provide attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME environment variables.
 		resource.WithTelemetrySDK(), // Discover and provide information about the OpenTelemetry SDK used.
@@ -48,10 +48,11 @@ func Resources(ctx context.Context, service, version string) (*resource.Resource
 		slog.WarnContext(ctx, "Non-Fatal Open-Telemetry Error", slog.String("error", e.Error()))
 	} else if e != nil {
 		exception := fmt.Errorf("unable to generate exportable resource: %w", e)
-		return nil, exception
+		slog.WarnContext(ctx, "Fatal Open-Telemetry Error", slog.String("error", exception.Error()))
+		panic(exception)
 	}
 
-	return instance, nil
+	return instance
 }
 
 // Setup bootstraps the OpenTelemetry pipeline.
