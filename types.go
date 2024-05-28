@@ -274,7 +274,7 @@ func (mu *Mux) Middleware(middlewares ...func(http.Handler) http.Handler) {
 
 	mu.options.Globals.Middleware = append(mu.options.Globals.Middleware, middlewares...)
 
-	slog.Info("Middleware(s)", slog.Int("count", len(mu.options.Globals.Middleware)))
+	// slog.Info("Middleware(s)", slog.Int("count", len(mu.options.Globals.Middleware)))
 }
 
 func (mu *Mux) log(ctx context.Context, host, method, path string, headers http.Header) {
