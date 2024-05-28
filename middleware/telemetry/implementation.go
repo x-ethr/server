@@ -45,17 +45,19 @@ func (generic) Middleware(next http.Handler) http.Handler {
 			ctx = context.WithValue(ctx, key, value)
 		}
 
-		handler := otelhttp.NewHandler(otelhttp.WithRouteTag(pattern, next), pattern, otelhttp.WithServerName(server), otelhttp.WithFilter(func(request *http.Request) (filter bool) {
-			ctx := request.Context()
+		// handler := otelhttp.NewHandler(otelhttp.WithRouteTag(pattern, next), pattern, otelhttp.WithServerName(server), otelhttp.WithFilter(func(request *http.Request) (filter bool) {
+		// 	ctx := request.Context()
+		//
+		// 	if request.URL.Path == "/health" {
+		// 		filter = true
+		//
+		// 		slog.Log(ctx, logging.Trace, "Health Telemetry Exclusion", slog.Bool("filter", filter))
+		// 	}
+		//
+		// 	return
+		// }))
 
-			if request.URL.Path == "/health" {
-				filter = true
-
-				slog.Log(ctx, logging.Trace, "Health Telemetry Exclusion", slog.Bool("filter", filter))
-			}
-
-			return
-		}))
+		handler := otelhttp.WithRouteTag(pattern, next)
 
 		handler.ServeHTTP(w, r)
 	})
