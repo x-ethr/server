@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
@@ -109,7 +110,9 @@ func resources(ctx context.Context, service, version string, settings *Settings)
 	}
 
 	instance, e := resource.New(ctx, options...)
-	if e != nil {
+	if errors.Is(e, resource.ErrPartialResource) || errors.Is(e, resource.ErrSchemaURLConflict) {
+		slog.WarnContext(ctx, "Non-Fatal Open-Telemetry Error", slog.String("error", e.Error()))
+	} else if e != nil {
 		exception := fmt.Errorf("unable to generate resource: %w", e)
 		return nil, exception
 	}
