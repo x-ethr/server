@@ -142,7 +142,7 @@ func traces(ctx context.Context, service, version string, settings *Settings) (*
 			return nil, e
 		}
 
-		options = append(options, trace.WithBatcher(exporter, trace.WithBatchTimeout(time.Second*5)))
+		options = append(options, trace.WithBatcher(exporter, trace.WithBatchTimeout(time.Second*30)))
 
 		if settings.Zipkin.Enabled {
 			z, e := zipkin.New(settings.Zipkin.URL)
@@ -150,7 +150,7 @@ func traces(ctx context.Context, service, version string, settings *Settings) (*
 				return nil, e
 			}
 
-			options = append(options, trace.WithBatcher(z, trace.WithBatchTimeout(time.Second*5)))
+			options = append(options, trace.WithBatcher(z, trace.WithBatchTimeout(time.Second*30)))
 		}
 	}
 
