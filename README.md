@@ -93,11 +93,6 @@ func main() {
     }).Middleware)
 
     mux.Middleware(middleware.New().Version().Configuration(func(options *versioning.Settings) {
-        options.Version.API = os.Getenv("VERSION")
-        if options.Version.API == "" && os.Getenv("CI") == "" {
-            options.Version.API = "local"
-        }
-
         options.Version.Service = version
     }).Middleware)
 
@@ -106,10 +101,7 @@ func main() {
     mux.Register(fmt.Sprintf("GET /%s/%s", prefix[version], service), func(w http.ResponseWriter, r *http.Request) {
         ctx := r.Context()
 
-        resources, e := telemetry.Resources(ctx, service, version)
-        if e != nil {
-            slog.WarnContext(ctx, "Received Exception From Telemetry-Resources", slog.String("error", e.Error()))
-        }
+        resources := telemetry.Resources(ctx, service, version)
 
         ctx, span := tracer.Start(ctx, fmt.Sprintf("%s - main", service))
         span.SetAttributes(resources.Attributes()...)
@@ -125,7 +117,6 @@ func main() {
                     "path":        path,
                     "service":     middleware.New().Service().Value(ctx),
                     "version":     middleware.New().Version().Value(ctx).Service,
-                    "api-version": middleware.New().Version().Value(ctx).API,
                 },
             }
 
