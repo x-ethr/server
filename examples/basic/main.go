@@ -80,7 +80,15 @@ func main() {
 	mux.Middleware(middleware.New().Telemetry().Middleware)
 
 	mux.Register(fmt.Sprintf("GET /%s/%s", prefix[version], service), func(w http.ResponseWriter, r *http.Request) {
-		ctx, span := tracer.Start(r.Context(), "example")
+		ctx := r.Context()
+
+		resources, e := telemetry.Resources(ctx, service, version)
+		if e != nil {
+			slog.WarnContext(ctx, "Received Exception From Telemetry-Resources", slog.String("error", e.Error()))
+		}
+
+		ctx, span := tracer.Start(ctx, fmt.Sprintf("%s - main", service))
+		span.SetAttributes(resources.Attributes()...)
 
 		defer span.End()
 
