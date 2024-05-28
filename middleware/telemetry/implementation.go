@@ -28,8 +28,6 @@ func (generic) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		server := ctx.Value(keystore.Keys().Server()).(string)
-
 		// --> benefit of interfaces includes avoiding cyclic dependencies.
 		mux := ctx.Value(http.ServerContextKey).(*http.Server).Handler.(interface {
 			Pattern(r *http.Request) string
