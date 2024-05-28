@@ -29,6 +29,7 @@ func Write(r *http.Response, writer http.ResponseWriter) {
 		http.CanonicalHeaderKey("x-b3-sampled"),
 		http.CanonicalHeaderKey("x-b3-flags"),
 		http.CanonicalHeaderKey("x-ot-span-context"),
+		http.CanonicalHeaderKey("x-api-version"),
 	}
 
 	for key := range headers {
