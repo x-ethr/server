@@ -36,13 +36,13 @@ func (*generic) Middleware(next http.Handler) http.Handler {
 
 		{
 			var internal *bool
-			if v := r.Header.Get(http.CanonicalHeaderKey("x-envoy-internal")); v == "true" {
+			if v := r.Header.Get("X-Envoy-Internal"); v == "true" {
 				assignment := true
 				internal = &assignment
 			}
 
 			var attempts *int
-			if v := r.Header.Get(http.CanonicalHeaderKey("x-envoy-attempt-count")); v != "" {
+			if v := r.Header.Get("X-Envoy-Request-Count"); v != "" {
 				assignment, e := strconv.Atoi(v)
 				if e == nil {
 					attempts = &assignment
@@ -50,7 +50,7 @@ func (*generic) Middleware(next http.Handler) http.Handler {
 			}
 
 			var original *string
-			if v := r.Header.Get(http.CanonicalHeaderKey("x-envoy-original-path")); v != "" {
+			if v := r.Header.Get("X-Envoy-Original-Path"); v != "" {
 				original = &v
 			}
 
