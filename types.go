@@ -303,7 +303,7 @@ func (mu *Mux) log(ctx context.Context, host, method, path string, headers http.
 	}
 
 	if v := envoy.New().Value(ctx); v != nil {
-		slog.InfoContext(ctx, "HTTP(s) Request", slog.Group("$", slog.String("path", path), slog.String("method", method), slog.String("host", host)), slog.Any("envoy", v), slog.Any("headers", mapping))
+		slog.InfoContext(ctx, "HTTP(s) Request", slog.Group("$", slog.String("path", path), slog.String("method", method), slog.String("host", host), slog.Any("envoy", v)), slog.Any("headers", mapping))
 		return
 	}
 
