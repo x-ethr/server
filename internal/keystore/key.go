@@ -36,6 +36,14 @@ type Store interface {
 	//
 	//   - Used for configuring middleware that sets the "Server" response header.
 	Timeout() Key
+
+	// Envoy represents the context.Context key: "envoy". See [envoy.Implementation] for the middleware.
+	//
+	//	- Used for storing headers in middleware:
+	//		- X-Envoy-Original-Path
+	//		- X-Envoy-Internal
+	//		- X-Envoy-Attempt-Count
+	Envoy() Key
 }
 
 type store struct{}
@@ -63,6 +71,8 @@ func (s store) Server() Key {
 func (s store) Timeout() Key {
 	return "timeout"
 }
+
+func (s store) Envoy() Key { return "envoy" }
 
 var s = store{}
 

@@ -16,11 +16,13 @@ func Server(ctx context.Context, handler http.Handler, port string) *http.Server
 		DisableGeneralOptionsHandler: false,
 		TLSConfig:                    nil,
 		ReadTimeout:                  15 * time.Second,
+		ReadHeaderTimeout:            0,
 		WriteTimeout:                 60 * time.Second,
 		IdleTimeout:                  30 * time.Second,
 		MaxHeaderBytes:               http.DefaultMaxHeaderBytes,
 		TLSNextProto:                 nil,
 		ConnState:                    nil,
+		ErrorLog:                     nil,
 		BaseContext: func(net.Listener) context.Context {
 			return ctx
 		},

@@ -72,6 +72,7 @@ func Specification() *Options {
 					"Traceparent",
 					"Tracestate",
 					"X-Envoy-Attempt-Count",
+					"Postman-Token",
 				},
 			},
 		},
