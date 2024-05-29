@@ -10,8 +10,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-
-	"github.com/x-ethr/server/middleware/envoy"
 )
 
 // Host represents the hostname for routing HTTP requests. It is a string type.
@@ -300,11 +298,6 @@ func (mu *Mux) log(ctx context.Context, host, method, path string, headers http.
 		}
 
 		mapping[k] = strings.Join(v, ", ")
-	}
-
-	if v := envoy.New().Value(ctx); v != nil {
-		slog.InfoContext(ctx, "HTTP(s) Request", slog.Group("$", slog.String("path", path), slog.String("method", method), slog.String("host", host), slog.Any("envoy", v)), slog.Any("headers", mapping))
-		return
 	}
 
 	slog.InfoContext(ctx, "HTTP(s) Request", slog.Group("$", slog.String("path", path), slog.String("method", method), slog.String("host", host)), slog.Any("headers", mapping))
