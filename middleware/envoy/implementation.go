@@ -60,7 +60,7 @@ func (*generic) Middleware(next http.Handler) http.Handler {
 
 			value := &Envoy{Original: original, Attempts: attempts, Internal: internal}
 
-			slog.Log(ctx, logging.Info, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.Any("value", value)))
+			slog.Log(ctx, logging.Debug, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.Any("value", value)))
 
 			ctx = context.WithValue(ctx, key, value)
 		}
