@@ -23,7 +23,11 @@ type Envoy struct {
 }
 
 func (*generic) Value(ctx context.Context) *Envoy {
-	return ctx.Value(key).(*Envoy)
+	if v, ok := ctx.Value(key).(*Envoy); ok {
+		return v
+	}
+
+	return nil
 }
 
 func (*generic) Middleware(next http.Handler) http.Handler {
