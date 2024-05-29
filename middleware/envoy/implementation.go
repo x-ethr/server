@@ -17,9 +17,9 @@ type generic struct {
 }
 
 type Envoy struct {
-	Attempts *int    `json:"x-envoy-attempt-count"`
-	Original *string `json:"x-envoy-original-path"`
-	Internal *bool   `json:"x-envoy-internal"`
+	Attempts *int    `json:"x-envoy-attempt-count,omitempty"`
+	Original *string `json:"x-envoy-original-path,omitempty"`
+	Internal *bool   `json:"x-envoy-internal,omitempty"`
 }
 
 func (*generic) Value(ctx context.Context) *Envoy {

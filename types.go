@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/x-ethr/server/internal/keystore"
 	"github.com/x-ethr/server/middleware/envoy"
 )
 
@@ -303,13 +302,12 @@ func (mu *Mux) log(ctx context.Context, host, method, path string, headers http.
 		mapping[k] = strings.Join(v, ", ")
 	}
 
-	if v := ctx.Value(keystore.Keys().Envoy()); v != nil {
-		if typecast, valid := v.(*envoy.Envoy); valid && typecast.Original != nil {
-			slog.InfoContext(ctx, "HTTP(s) Request", slog.Group("$", slog.String("path", path), slog.String("method", method), slog.String("host", host)), slog.String("original", *(typecast.Original)), slog.Any("headers", mapping))
-		}
-	} else {
-		slog.InfoContext(ctx, "HTTP(s) Request", slog.Group("$", slog.String("path", path), slog.String("method", method), slog.String("host", host)), slog.Any("headers", mapping))
+	if v := envoy.New().Value(ctx); v != nil {
+		slog.InfoContext(ctx, "HTTP(s) Request", slog.Group("$", slog.String("path", path), slog.String("method", method), slog.String("host", host)), slog.Any("envoy", v), slog.Any("headers", mapping))
+		return
 	}
+
+	slog.InfoContext(ctx, "HTTP(s) Request", slog.Group("$", slog.String("path", path), slog.String("method", method), slog.String("host", host)), slog.Any("headers", mapping))
 }
 
 // ServeHTTP handles an HTTP request by routing it to the appropriate handler based on the provided host, path, and method.
