@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"github.com/x-ethr/server/middleware/envoy"
 	"github.com/x-ethr/server/middleware/name"
 	"github.com/x-ethr/server/middleware/path"
 	"github.com/x-ethr/server/middleware/servername"
@@ -35,6 +36,10 @@ func (*generic) Timeout() timeout.Implementation {
 	return timeout.New()
 }
 
+func (*generic) Envoy() envoy.Implementation {
+	return envoy.New()
+}
+
 type Middleware interface {
 	Path() path.Implementation           // Path - See the [path] package for additional details.
 	Version() versioning.Implementation  // Version - See the [versioning] package for additional details.
@@ -42,6 +47,7 @@ type Middleware interface {
 	Telemetry() telemetry.Implementation // Telemetry - See the [telemetry] package for additional details.
 	Server() servername.Implementation   // Server - See the [servername] package for additional details.
 	Timeout() timeout.Implementation     // Timeout - See the [timeout] package for additional details.
+	Envoy() envoy.Implementation         // Envoy - See the [envoy] package for additional details.
 }
 
 func New() Middleware {
