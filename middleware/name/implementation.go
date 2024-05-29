@@ -43,7 +43,7 @@ func (g *generic) Middleware(next http.Handler) http.Handler {
 		{
 			value := g.options.Service
 
-			slog.Log(ctx, logging.Trace, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.String("value", value)))
+			slog.Log(ctx, logging.Debug, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.String("value", value)))
 
 			ctx = context.WithValue(ctx, key, value)
 

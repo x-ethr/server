@@ -50,7 +50,7 @@ func (g *generic) Middleware(next http.Handler) http.Handler {
 		{
 			value := strconv.FormatInt(int64(g.options.Timeout), 10)
 
-			slog.Log(ctx, logging.Trace, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.String("value", g.options.Timeout.String())))
+			slog.Log(ctx, logging.Debug, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.String("value", g.options.Timeout.String())))
 
 			ctx = context.WithValue(ctx, key, value)
 
