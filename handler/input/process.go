@@ -1,4 +1,4 @@
-package handler
+package input
 
 import (
 	"context"
@@ -8,9 +8,11 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+
+	"github.com/x-ethr/server/handler/types"
 )
 
-type Processor[Input interface{}, Output interface{}] func(ctx context.Context, input *Input, output chan<- *Output, exception chan<- *Exception)
+type Processor[Input interface{}, Output interface{}] func(ctx context.Context, input *Input, output chan<- *Output, exception chan<- *types.Exception)
 
 func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input, Output]) {
 	ctx := r.Context()
@@ -19,8 +21,8 @@ func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *ht
 
 	output, exception, invalid := Channels[Output]()
 
-	if message, validators, e := Validate(ctx, v, r.Body, &input); e != nil {
-		invalid <- &Invalid{Validators: validators, Message: message, Source: e}
+	if message, validators, e := types.Validate(ctx, v, r.Body, &input); e != nil {
+		invalid <- &types.Invalid{Validators: validators, Message: message, Source: e}
 		return
 	}
 
