@@ -12,15 +12,15 @@ import (
 	"sync"
 )
 
-func Middlewares[Handler http.Handler]() *Middleware[Handler] {
-	return &Middleware[Handler]{}
+func Middlewares() *Middleware {
+	return &Middleware{}
 }
 
-type Middleware[Handler http.Handler] struct {
+type Middleware struct {
 	middleware []func(http.Handler) http.Handler
 }
 
-func (m *Middleware[Handler]) chain(parent http.Handler) (handler Handler) {
+func construct[Handler http.Handler](m *Middleware, parent http.Handler) (handler Handler) {
 	var length = len(m.middleware)
 	if length == 0 {
 		return parent.(Handler)
@@ -35,7 +35,7 @@ func (m *Middleware[Handler]) chain(parent http.Handler) (handler Handler) {
 	return
 }
 
-func (m *Middleware[Handler]) Add(middlewares ...func(http.Handler) http.Handler) {
+func (m *Middleware) Add(middlewares ...func(http.Handler) http.Handler) {
 	if len(middlewares) == 0 {
 		return
 	}
@@ -45,8 +45,8 @@ func (m *Middleware[Handler]) Add(middlewares ...func(http.Handler) http.Handler
 	// slog.Info("Middleware(s)", slog.Int("count", len(mu.options.Globals.Middleware)))
 }
 
-func (m *Middleware[Handler]) Handler(handler http.Handler) Handler {
-	return m.chain(handler)
+func Handler[Type http.Handler](middleware *Middleware, handler http.Handler) Type {
+	return construct[Type](middleware, handler)
 }
 
 // Host represents the hostname for routing HTTP requests. It is a string type.
