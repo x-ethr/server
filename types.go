@@ -12,6 +12,39 @@ import (
 	"sync"
 )
 
+type Middleware struct {
+	middleware []func(http.Handler) http.Handler
+}
+
+func (m *Middleware) chain(parent http.Handler) (handler http.Handler) {
+	var length = len(m.middleware)
+	if length == 0 {
+		return parent
+	}
+
+	// Wrap the end handler with the middleware chain
+	handler = m.middleware[len(m.middleware)-1](parent)
+	for i := len(m.middleware) - 2; i >= 0; i-- {
+		handler = m.middleware[i](handler)
+	}
+
+	return
+}
+
+func (m *Middleware) Append(middlewares ...func(http.Handler) http.Handler) {
+	if len(middlewares) == 0 {
+		return
+	}
+
+	m.middleware = append(m.middleware, middlewares...)
+
+	// slog.Info("Middleware(s)", slog.Int("count", len(mu.options.Globals.Middleware)))
+}
+
+func (m *Middleware) Handler(handler http.Handler) http.Handler {
+	return m.chain(handler)
+}
+
 // Host represents the hostname for routing HTTP requests. It is a string type.
 type Host string
 
