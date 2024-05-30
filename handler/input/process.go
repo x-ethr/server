@@ -11,7 +11,7 @@ import (
 	"github.com/x-ethr/server/handler/types"
 )
 
-type Processor[Input interface{}, Output interface{}] func(r *http.Request, input *Input, output chan<- *Output, exception chan<- *types.Exception, options *types.Options)
+type Processor[Input interface{}, Output interface{}] func(r *http.Request, input *Input, output chan<- *types.Response[Output], exception chan<- *types.Exception, options *types.Options)
 
 func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input, Output], settings ...types.Variadic) {
 	ctx := r.Context()
@@ -46,9 +46,9 @@ func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *ht
 			slog.DebugContext(ctx, "Successfully Processed Request", slog.Any("response", response))
 
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusCreated)
+			w.WriteHeader(response.Code)
 
-			json.NewEncoder(w).Encode(response)
+			json.NewEncoder(w).Encode(response.Payload)
 
 			return
 		case e := <-invalid:
