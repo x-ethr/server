@@ -146,7 +146,7 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 		default:
 			output, e := json.Marshal(a.Value.Any())
 			if e != nil {
-				fmt.Fprintf(os.Stderr, "ERROR - Unable to Marshal Logging Attribute: %s\n", a.Value.String())
+				fmt.Fprintf(os.Stderr, "ERROR - Unable to Marshal Logging Attribute (%s): %s - %v\n", a.Key, a.Value.String(), e)
 
 				return false
 			}
