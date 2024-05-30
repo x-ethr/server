@@ -12,15 +12,17 @@ import (
 	"sync"
 )
 
-func Middlewares() *Middleware {
-	return &Middleware{}
+func Middleware() *Middlewares {
+	return &Middlewares{
+		middleware: make([]func(http.Handler) http.Handler, 0),
+	}
 }
 
-type Middleware struct {
+type Middlewares struct {
 	middleware []func(http.Handler) http.Handler
 }
 
-func construct[Handler http.Handler](m *Middleware, parent http.Handler) (handler Handler) {
+func construct[Handler http.Handler](m *Middlewares, parent http.Handler) (handler Handler) {
 	var length = len(m.middleware)
 	if length == 0 {
 		return parent.(Handler)
@@ -35,7 +37,7 @@ func construct[Handler http.Handler](m *Middleware, parent http.Handler) (handle
 	return
 }
 
-func (m *Middleware) Add(middlewares ...func(http.Handler) http.Handler) {
+func (m *Middlewares) Add(middlewares ...func(http.Handler) http.Handler) {
 	if len(middlewares) == 0 {
 		return
 	}
@@ -45,7 +47,7 @@ func (m *Middleware) Add(middlewares ...func(http.Handler) http.Handler) {
 	// slog.Info("Middleware(s)", slog.Int("count", len(mu.options.Globals.Middleware)))
 }
 
-func Handler[Type http.Handler](middleware *Middleware, handler http.Handler) Type {
+func Handler[Type http.Handler](middleware *Middlewares, handler http.Handler) Type {
 	return construct[Type](middleware, handler)
 }
 
