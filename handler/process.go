@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, channel chan *Output, body chan *Input, exception chan *Exception, invalid chan *Invalid) {
+func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, output chan *Output, body chan *Input, exception chan *Exception, invalid chan *Invalid) {
 	ctx := r.Context()
 
 	var input *Input // only used for logging
@@ -18,7 +18,7 @@ func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *ht
 			return
 		case input = <-body: // continue waiting for one of the other primitives to complete
 			continue
-		case response := <-channel:
+		case response := <-output:
 			if response == nil {
 				slog.ErrorContext(ctx, "Response Returned Unexpected, Null Result", slog.String("path", r.URL.Path), slog.String("method", r.Method), slog.Any("input", input))
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
