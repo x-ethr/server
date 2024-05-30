@@ -1,7 +1,6 @@
 package input
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -12,7 +11,7 @@ import (
 	"github.com/x-ethr/server/handler/types"
 )
 
-type Processor[Input interface{}, Output interface{}] func(ctx context.Context, input *Input, output chan<- *Output, exception chan<- *types.Exception, options *types.Options)
+type Processor[Input interface{}, Output interface{}] func(r *http.Request, input *Input, output chan<- *Output, exception chan<- *types.Exception, options *types.Options)
 
 func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input, Output], settings ...types.Variadic) {
 	ctx := r.Context()
@@ -31,7 +30,7 @@ func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *ht
 		return
 	}
 
-	go processor(ctx, &input, output, exception, configuration)
+	go processor(r.WithContext(ctx), &input, output, exception, configuration)
 
 	for {
 		select {
