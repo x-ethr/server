@@ -7,10 +7,10 @@ import (
 	"net/http"
 )
 
-func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, output chan *Output, body chan *Input, exception chan *Exception, invalid chan *Invalid) {
+func Process[Body interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, output chan *Output, body chan *Body, exception chan *Exception, invalid chan *Invalid) {
 	ctx := r.Context()
 
-	var input *Input // only used for logging
+	var input *Body // only used for logging
 
 	for {
 		select {
