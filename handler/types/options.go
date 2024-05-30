@@ -8,9 +8,10 @@ import (
 type Options struct {
 	Tracer trace.Tracer
 
-	Span    string // Span represents the telemetry span name
-	Service string // Service represents the telemetry span's resource service
-	Version string // Version represents the telemetry span's resource version
+	Span     string // Span represents the telemetry span name
+	Service  string // Service represents the telemetry span's resource service
+	Version  string // Version represents the telemetry span's resource version
+	Workload string // Workload represents the telemetry span's workload name
 }
 
 // Variadic represents a functional constructor for the [Options] type. Typical callers of Variadic won't need to perform
