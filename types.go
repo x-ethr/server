@@ -47,6 +47,10 @@ func (m *Middlewares) Handler(parent http.Handler) (handler http.Handler) {
 	return
 }
 
+func Handler[Type http.Handler](middleware *Middlewares, handler http.Handler) Type {
+	return middleware.Handler(handler).(Type)
+}
+
 // Host represents the hostname for routing HTTP requests. It is a string type.
 type Host string
 
