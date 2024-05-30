@@ -1,6 +1,7 @@
 package output
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -36,12 +37,23 @@ func Process(w http.ResponseWriter, r *http.Request, processor Processor, settin
 
 			slog.DebugContext(ctx, "Successfully Processed Request", slog.Any("response", response))
 
-			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(response.Code)
 
-			json.NewEncoder(w).Encode(response.Payload)
+			switch response.Payload.(type) {
+			case string, *string:
+				w.Header().Set("Content-Type", "text/plain")
+				if response.Payload == nil {
+					bufio.NewWriter(w).Write([]byte(http.StatusText(http.StatusNoContent)))
+					return
+				}
 
-			return
+				bufio.NewWriter(w).Write([]byte(response.Payload.(string)))
+				return
+			default:
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(response.Payload)
+				return
+			}
 		case e := <-exception:
 			var err error = e.Source
 			if e.Source == nil {
