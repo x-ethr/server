@@ -35,7 +35,7 @@ func (m *Middleware) chain(parent http.Handler) (handler http.Handler) {
 	return
 }
 
-func (m *Middleware) Append(middlewares ...func(http.Handler) http.Handler) {
+func (m *Middleware) Add(middlewares ...func(http.Handler) http.Handler) {
 	if len(middlewares) == 0 {
 		return
 	}
