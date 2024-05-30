@@ -11,6 +11,8 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+type Validators map[string]Validator
+
 type Validator struct {
 	Value   interface{} `json:"value,omitempty"`
 	Valid   bool        `json:"valid"`
@@ -18,10 +20,10 @@ type Validator struct {
 }
 
 type Helper interface {
-	Help() map[string]Validator
+	Help() Validators
 }
 
-func Validate(ctx context.Context, v *validator.Validate, body io.Reader, data Helper) (string, map[string]Validator, error) {
+func Validate(ctx context.Context, v *validator.Validate, body io.Reader, data Helper) (string, Validators, error) {
 	// invalid describes an invalid argument passed to `Struct`, `StructExcept`, StructPartial` or `Field`
 	var invalid *validator.InvalidValidationError
 

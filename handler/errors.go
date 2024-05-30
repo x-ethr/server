@@ -11,9 +11,9 @@ type Invalid struct {
 	//
 	// 	- If this value is specified, then the code must be [http.StatusUnprocessableEntity] or [http.StatusServiceUnavailable].
 	//	- If the message is "Internal Validation Error", then the validator for the given request input is invalid.
-	Message    string               `json:"message,omitempty"`
-	Validators map[string]Validator `json:"validators,omitempty"`
-	Source     error                `json:"error,omitempty"` // Source represents the source error
+	Message    string     `json:"message,omitempty"`
+	Validators Validators `json:"validators,omitempty"`
+	Source     error      `json:"error,omitempty"` // Source represents the source error
 }
 
 // Error returns a string representation of the Exception. If the Exception's Message is empty,
