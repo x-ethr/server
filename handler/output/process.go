@@ -10,14 +10,19 @@ import (
 	"github.com/x-ethr/server/handler/types"
 )
 
-type Processor[Output interface{}] func(ctx context.Context, output chan<- *Output, exception chan<- *types.Exception)
+type Processor[Output interface{}] func(ctx context.Context, output chan<- *Output, exception chan<- *types.Exception, options *types.Options)
 
-func Process[Output interface{}](w http.ResponseWriter, r *http.Request, processor Processor[Output]) {
+func Process[Output interface{}](w http.ResponseWriter, r *http.Request, processor Processor[Output], settings ...types.Variadic) {
 	ctx := r.Context()
+
+	configuration := types.Configuration()
+	for _, option := range settings {
+		option(configuration)
+	}
 
 	output, exception := Channels[Output]()
 
-	go processor(ctx, output, exception)
+	go processor(ctx, output, exception, configuration)
 
 	for {
 		select {

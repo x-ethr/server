@@ -12,10 +12,15 @@ import (
 	"github.com/x-ethr/server/handler/types"
 )
 
-type Processor[Input interface{}, Output interface{}] func(ctx context.Context, input *Input, output chan<- *Output, exception chan<- *types.Exception)
+type Processor[Input interface{}, Output interface{}] func(ctx context.Context, input *Input, output chan<- *Output, exception chan<- *types.Exception, options *types.Options)
 
-func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input, Output]) {
+func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input, Output], settings ...types.Variadic) {
 	ctx := r.Context()
+
+	configuration := types.Configuration()
+	for _, option := range settings {
+		option(configuration)
+	}
 
 	var input Input // only used for logging
 
@@ -26,7 +31,7 @@ func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *ht
 		return
 	}
 
-	go processor(ctx, &input, output, exception)
+	go processor(ctx, &input, output, exception, configuration)
 
 	for {
 		select {
