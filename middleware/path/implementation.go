@@ -30,7 +30,7 @@ func (*generic) Middleware(next http.Handler) http.Handler {
 		{
 			value := r.URL.Path
 
-			slog.Log(ctx, logging.Debug, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.String("value", value)))
+			slog.Log(ctx, logging.Trace, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.String("value", value)))
 
 			ctx = context.WithValue(ctx, key, value)
 		}

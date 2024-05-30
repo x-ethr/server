@@ -142,7 +142,6 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 		switch value.(type) {
 		case string, bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, complex64, complex128:
 			fields[a.Key] = value
-
 		default:
 			output, e := json.Marshal(a.Value.Any())
 			if e != nil {

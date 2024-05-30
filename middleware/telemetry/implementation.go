@@ -42,7 +42,7 @@ func (generic) Middleware(next http.Handler) http.Handler {
 		{
 			value := "enabled"
 
-			slog.Log(ctx, logging.Debug, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.Any("value", map[string]string{"enabled": value, "pattern": pattern})))
+			slog.Log(ctx, logging.Trace, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.Any("value", map[string]string{"enabled": value, "pattern": pattern})))
 
 			ctx = context.WithValue(ctx, key, value)
 		}
