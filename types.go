@@ -12,30 +12,30 @@ import (
 	"sync"
 )
 
-func Middlewares() *Middleware {
-	return &Middleware{}
+func Middlewares[Handler http.Handler]() *Middleware[Handler] {
+	return &Middleware[Handler]{}
 }
 
-type Middleware struct {
+type Middleware[Handler http.Handler] struct {
 	middleware []func(http.Handler) http.Handler
 }
 
-func (m *Middleware) chain(parent http.Handler) (handler http.Handler) {
+func (m *Middleware[Handler]) chain(parent http.Handler) (handler Handler) {
 	var length = len(m.middleware)
 	if length == 0 {
-		return parent
+		return parent.(Handler)
 	}
 
 	// Wrap the end handler with the middleware chain
-	handler = m.middleware[len(m.middleware)-1](parent)
+	handler = m.middleware[len(m.middleware)-1](parent).(Handler)
 	for i := len(m.middleware) - 2; i >= 0; i-- {
-		handler = m.middleware[i](handler)
+		handler = m.middleware[i](handler).(Handler)
 	}
 
 	return
 }
 
-func (m *Middleware) Add(middlewares ...func(http.Handler) http.Handler) {
+func (m *Middleware[Handler]) Add(middlewares ...func(http.Handler) http.Handler) {
 	if len(middlewares) == 0 {
 		return
 	}
@@ -45,7 +45,7 @@ func (m *Middleware) Add(middlewares ...func(http.Handler) http.Handler) {
 	// slog.Info("Middleware(s)", slog.Int("count", len(mu.options.Globals.Middleware)))
 }
 
-func (m *Middleware) Handler(handler http.Handler) http.Handler {
+func (m *Middleware[Handler]) Handler(handler http.Handler) Handler {
 	return m.chain(handler)
 }
 
