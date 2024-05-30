@@ -21,7 +21,7 @@ type Options struct {
 }
 
 func (o *Options) Span(ctx context.Context) (context.Context, trace.Span) {
-	return o.Tracer.Start(ctx, o.Name, trace.WithAttributes(attribute.String("workload", o.Service)), trace.WithAttributes(telemetry.Resources(ctx, o.Service, o.Version).Attributes()...), trace.WithAttributes(attribute.String("component", o.Component)))
+	return o.Tracer.Start(ctx, o.Name, trace.WithAttributes(attribute.String("workload", o.Workload)), trace.WithAttributes(telemetry.Resources(ctx, o.Service, o.Version).Attributes()...), trace.WithAttributes(attribute.String("component", o.Component)))
 }
 
 // Variadic represents a functional constructor for the [Options] type. Typical callers of Variadic won't need to perform
