@@ -13,7 +13,7 @@ import (
 
 type Processor[Input interface{}] func(r *http.Request, input *Input, output chan<- *types.Response, exception chan<- *types.Exception, options *types.Options)
 
-func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input], settings ...types.Variadic) {
+func Process[Input interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input], settings ...types.Variadic) {
 	ctx := r.Context()
 
 	configuration := types.Configuration()
