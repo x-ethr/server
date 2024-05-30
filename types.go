@@ -12,6 +12,10 @@ import (
 	"sync"
 )
 
+func Middlewares() *Middleware {
+	return &Middleware{}
+}
+
 type Middleware struct {
 	middleware []func(http.Handler) http.Handler
 }
