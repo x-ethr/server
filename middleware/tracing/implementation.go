@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/x-ethr/text"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/x-ethr/server/internal/keystore"
 	"github.com/x-ethr/server/logging"
@@ -28,8 +29,8 @@ func (g *generic) Configuration(options ...Variadic) Implementation {
 	return g
 }
 
-func (*generic) Value(ctx context.Context) string {
-	return ctx.Value(key).(string)
+func (*generic) Value(ctx context.Context) trace.Tracer {
+	return ctx.Value(key).(trace.Tracer)
 }
 
 func (g *generic) Middleware(next http.Handler) http.Handler {
