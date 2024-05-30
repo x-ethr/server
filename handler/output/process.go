@@ -9,9 +9,9 @@ import (
 	"github.com/x-ethr/server/handler/types"
 )
 
-type Processor[Output interface{}] func(r *http.Request, output chan<- *types.Response[Output], exception chan<- *types.Exception, options *types.Options)
+type Processor func(r *http.Request, output chan<- *types.Response, exception chan<- *types.Exception, options *types.Options)
 
-func Process[Output interface{}](w http.ResponseWriter, r *http.Request, processor Processor[Output], settings ...types.Variadic) {
+func Process(w http.ResponseWriter, r *http.Request, processor Processor, settings ...types.Variadic) {
 	ctx := r.Context()
 
 	configuration := types.Configuration()
@@ -19,7 +19,7 @@ func Process[Output interface{}](w http.ResponseWriter, r *http.Request, process
 		option(configuration)
 	}
 
-	output, exception := Channels[Output]()
+	output, exception := channels()
 
 	go processor(r.WithContext(ctx), output, exception, configuration)
 

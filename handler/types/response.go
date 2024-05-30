@@ -1,6 +1,6 @@
 package types
 
-type Response[Output interface{}] struct {
+type Response struct {
 	Code    int
-	Payload Output
+	Payload interface{}
 }

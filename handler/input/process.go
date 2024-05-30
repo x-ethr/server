@@ -11,9 +11,9 @@ import (
 	"github.com/x-ethr/server/handler/types"
 )
 
-type Processor[Input interface{}, Output interface{}] func(r *http.Request, input *Input, output chan<- *types.Response[Output], exception chan<- *types.Exception, options *types.Options)
+type Processor[Input interface{}] func(r *http.Request, input *Input, output chan<- *types.Response, exception chan<- *types.Exception, options *types.Options)
 
-func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input, Output], settings ...types.Variadic) {
+func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input], settings ...types.Variadic) {
 	ctx := r.Context()
 
 	configuration := types.Configuration()
@@ -23,7 +23,7 @@ func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *ht
 
 	var input Input // only used for logging
 
-	output, exception, invalid := Channels[Output]()
+	output, exception, invalid := channels()
 
 	if message, validators, e := types.Validate(ctx, v, r.Body, &input); e != nil {
 		invalid <- &types.Invalid{Validators: validators, Message: message, Source: e}
