@@ -32,23 +32,16 @@ func (generic) Middleware(next http.Handler) http.Handler {
 		server := ctx.Value(keystore.Keys().Server()).(string)
 		service := ctx.Value(keystore.Keys().Service()).(string)
 
-		// --> benefit of interfaces includes avoiding cyclic dependencies.
-		mux := ctx.Value(http.ServerContextKey).(*http.Server).Handler.(interface {
-			Pattern(r *http.Request) string
-		})
-
-		pattern := mux.Pattern(r)
-
 		{
 			value := "enabled"
 
-			slog.Log(ctx, logging.Trace, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.Any("value", map[string]string{"enabled": value, "pattern": pattern})))
+			slog.Log(ctx, logging.Trace, "Middleware", slog.String("name", name), slog.Group("context", slog.String("key", string(key)), slog.Any("value", map[string]string{"enabled": value})))
 
 			ctx = context.WithValue(ctx, key, value)
 		}
 
 		servername := fmt.Sprintf("%s-%s", server, service)
-		handler := otelhttp.NewHandler(otelhttp.WithRouteTag(pattern, next), pattern, otelhttp.WithServerName(servername), otelhttp.WithFilter(func(request *http.Request) (filter bool) {
+		handler := otelhttp.NewHandler(otelhttp.WithRouteTag(r.URL.Path, next), r.Method, otelhttp.WithServerName(servername), otelhttp.WithFilter(func(request *http.Request) (filter bool) {
 			ctx := request.Context()
 
 			if request.URL.Path == "/health" {
