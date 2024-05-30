@@ -23,7 +23,7 @@ type Helper interface {
 	Help() Validators
 }
 
-func Validate(ctx context.Context, v *validator.Validate, body io.Reader, data Helper) (string, Validators, error) {
+func Validate(ctx context.Context, v *validator.Validate, body io.Reader, data interface{}) (string, Validators, error) {
 	// invalid describes an invalid argument passed to `Struct`, `StructExcept`, StructPartial` or `Field`
 	var invalid *validator.InvalidValidationError
 
@@ -74,7 +74,11 @@ func Validate(ctx context.Context, v *validator.Validate, body io.Reader, data H
 			))
 		}
 
-		return "", data.Help(), e
+		if typecast, ok := data.(Helper); ok {
+			return "", typecast.Help(), e
+		}
+
+		return "", nil, e
 	}
 
 	// If no exception was generated, log the "data" for debugging purposes.

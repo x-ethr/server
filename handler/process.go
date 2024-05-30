@@ -4,28 +4,32 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
+
+	"github.com/go-playground/validator/v10"
 )
 
-type Processor[Body interface{}, Output interface{}] func(ctx context.Context, reader io.ReadCloser, body chan *Body, output chan<- *Output, exception chan<- *Exception, invalid chan<- *Invalid)
+type Processor[Input interface{}, Output interface{}] func(ctx context.Context, input *Input, output chan<- *Output, exception chan<- *Exception)
 
-func Process[Body interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, processor Processor[Body, Output]) {
+func Process[Input interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input, Output]) {
 	ctx := r.Context()
 
-	var input *Body // only used for logging
+	var input Input // only used for logging
 
-	body, output, exception, invalid := Channels[Body, Output]()
+	output, exception, invalid := Channels[Output]()
 
-	go processor(ctx, r.Body, body, output, exception, invalid)
+	if message, validators, e := Validate(ctx, v, r.Body, &input); e != nil {
+		invalid <- &Invalid{Validators: validators, Message: message, Source: e}
+		return
+	}
+
+	go processor(ctx, &input, output, exception)
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case input = <-body: // continue waiting for one of the other primitives to complete
-			continue
 		case response := <-output:
 			if response == nil {
 				slog.ErrorContext(ctx, "Response Returned Unexpected, Null Result", slog.String("path", r.URL.Path), slog.String("method", r.Method), slog.Any("input", input))
