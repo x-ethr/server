@@ -3,6 +3,7 @@ module github.com/x-ethr/server
 go 1.22.3
 
 require (
+	github.com/go-playground/validator/v10 v10.20.0
 	github.com/x-ethr/color v0.1.1
 	github.com/x-ethr/text v0.1.17
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.52.0
@@ -24,9 +25,13 @@ require (
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0 // indirect
+	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.27.0 // indirect
 	go.opentelemetry.io/otel/metric v1.27.0 // indirect
