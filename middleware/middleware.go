@@ -7,6 +7,7 @@ import (
 	"github.com/x-ethr/server/middleware/servername"
 	"github.com/x-ethr/server/middleware/telemetry"
 	"github.com/x-ethr/server/middleware/timeout"
+	"github.com/x-ethr/server/middleware/tracing"
 	"github.com/x-ethr/server/middleware/versioning"
 )
 
@@ -40,6 +41,10 @@ func (*generic) Envoy() envoy.Implementation {
 	return envoy.New()
 }
 
+func (*generic) Tracer() tracing.Implementation {
+	return tracing.New()
+}
+
 type Middleware interface {
 	Path() path.Implementation           // Path - See the [path] package for additional details.
 	Version() versioning.Implementation  // Version - See the [versioning] package for additional details.
@@ -48,6 +53,7 @@ type Middleware interface {
 	Server() servername.Implementation   // Server - See the [servername] package for additional details.
 	Timeout() timeout.Implementation     // Timeout - See the [timeout] package for additional details.
 	Envoy() envoy.Implementation         // Envoy - See the [envoy] package for additional details.
+	Tracer() tracing.Implementation      // Tracer - See the [tracing] package for additional details.
 }
 
 func New() Middleware {

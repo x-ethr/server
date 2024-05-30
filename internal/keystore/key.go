@@ -44,6 +44,9 @@ type Store interface {
 	//		- X-Envoy-Internal
 	//		- X-Envoy-Attempt-Count
 	Envoy() Key
+
+	// Tracer represents the context.Context key: "tracer". See [tracing.Implementation] for the middleware.
+	Tracer() Key
 }
 
 type store struct{}
@@ -73,6 +76,8 @@ func (s store) Timeout() Key {
 }
 
 func (s store) Envoy() Key { return "envoy" }
+
+func (s store) Tracer() Key { return "tracer" }
 
 var s = store{}
 
