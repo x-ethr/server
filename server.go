@@ -9,7 +9,8 @@ import (
 )
 
 // Server initializes a http.Server with application-specific configuration.
-func Server(ctx context.Context, handler http.Handler, port string) *http.Server {
+func Server(ctx context.Context, handler http.Handler, middleware *Middlewares, port string) *http.Server {
+	handler = Handler()
 	return &http.Server{
 		Addr:                         fmt.Sprintf("0.0.0.0:%s", port),
 		Handler:                      handler,

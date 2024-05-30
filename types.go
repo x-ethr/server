@@ -22,21 +22,6 @@ type Middlewares struct {
 	middleware []func(http.Handler) http.Handler
 }
 
-func construct[Handler http.Handler](m *Middlewares, parent http.Handler) (handler Handler) {
-	var length = len(m.middleware)
-	if length == 0 {
-		return parent.(Handler)
-	}
-
-	// Wrap the end handler with the middleware chain
-	handler = m.middleware[len(m.middleware)-1](parent).(Handler)
-	for i := len(m.middleware) - 2; i >= 0; i-- {
-		handler = m.middleware[i](handler).(Handler)
-	}
-
-	return
-}
-
 func (m *Middlewares) Add(middlewares ...func(http.Handler) http.Handler) {
 	if len(middlewares) == 0 {
 		return
@@ -47,8 +32,19 @@ func (m *Middlewares) Add(middlewares ...func(http.Handler) http.Handler) {
 	// slog.Info("Middleware(s)", slog.Int("count", len(mu.options.Globals.Middleware)))
 }
 
-func Handler[Type http.Handler](middleware *Middlewares, handler http.Handler) Type {
-	return construct[Type](middleware, handler)
+func (m *Middlewares) Handler(parent http.Handler) (handler http.Handler) {
+	var length = len(m.middleware)
+	if length == 0 {
+		return parent
+	}
+
+	// Wrap the end handler with the middleware chain
+	handler = m.middleware[len(m.middleware)-1](parent)
+	for i := len(m.middleware) - 2; i >= 0; i-- {
+		handler = m.middleware[i](handler)
+	}
+
+	return
 }
 
 // Host represents the hostname for routing HTTP requests. It is a string type.
