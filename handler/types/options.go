@@ -6,7 +6,9 @@ import (
 
 // Options is the configuration structure optionally mutated via the [Variadic] constructor used throughout the package.
 type Options struct {
-	Tracer trace.Tracer
+	Tracer  trace.Tracer
+	Service string
+	Version string
 }
 
 // Variadic represents a functional constructor for the [Options] type. Typical callers of Variadic won't need to perform
