@@ -6,9 +6,11 @@ import (
 
 // Options is the configuration structure optionally mutated via the [Variadic] constructor used throughout the package.
 type Options struct {
-	Tracer  trace.Tracer
-	Service string
-	Version string
+	Tracer trace.Tracer
+
+	Span    string // Span represents the telemetry span name
+	Service string // Service represents the telemetry span's resource service
+	Version string // Version represents the telemetry span's resource version
 }
 
 // Variadic represents a functional constructor for the [Options] type. Typical callers of Variadic won't need to perform
