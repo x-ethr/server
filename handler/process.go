@@ -1,16 +1,24 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 )
 
-func Process[Body interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, output chan *Output, body chan *Body, exception chan *Exception, invalid chan *Invalid) {
+type Processor[Body interface{}, Output interface{}] func(ctx context.Context, reader io.ReadCloser, body chan *Body, output chan<- *Output, exception chan<- *Exception, invalid chan<- *Invalid)
+
+func Process[Body interface{}, Output interface{}](w http.ResponseWriter, r *http.Request, processor Processor[Body, Output]) {
 	ctx := r.Context()
 
 	var input *Body // only used for logging
+
+	body, output, exception, invalid := Channels[Body, Output]()
+
+	go processor(ctx, r.Body, body, output, exception, invalid)
 
 	for {
 		select {
