@@ -21,7 +21,7 @@ type Handler interface {
 	Processor() Processor
 }
 
-func New[Input interface{}]() Handler {
+func New() Handler {
 	return &handler{}
 }
 
