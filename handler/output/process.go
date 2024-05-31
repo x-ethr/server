@@ -5,39 +5,27 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-
-	"github.com/x-ethr/server/handler/types"
 )
 
-type handler struct{}
+type Processor func(handler *Handler)
 
-func (h *handler) Processor() Processor {
-	pointer := new(Processor)
-
-	return *(pointer)
-}
-
-type Handler interface {
-	Processor() Processor
-}
-
-func New() Handler {
-	return &handler{}
-}
-
-type Processor func(w http.ResponseWriter, r *http.Request, output chan<- *types.Response, exception chan<- *types.Exception, options *types.Options)
-
-func Process(w http.ResponseWriter, r *http.Request, processor Processor, settings ...types.Variadic) {
+func Process(w http.ResponseWriter, r *http.Request, processor Processor, settings ...Variadic) {
 	ctx := r.Context()
-
-	configuration := types.Configuration()
-	for _, option := range settings {
-		option(configuration)
-	}
 
 	output, exception := channels()
 
-	go processor(w, r.WithContext(ctx), output, exception, configuration)
+	// ctx = context.WithValue(ctx, "writer", w)
+	// ctx = context.WithValue(ctx, "request", r)
+	// ctx = context.WithValue(ctx, "options", configuration)
+
+	o := configuration(w, r, output, exception)
+	for _, option := range settings {
+		option(o)
+	}
+
+	o.handler.Request = o.handler.Request.WithContext(ctx)
+
+	go processor(o.handler)
 
 	for {
 		select {

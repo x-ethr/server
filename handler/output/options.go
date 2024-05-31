@@ -1,6 +1,10 @@
-package types
+package output
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/x-ethr/server/handler/types"
+)
 
 // Options is the configuration structure optionally mutated via the [Variadic] constructor used throughout the package.
 type Options struct {
@@ -12,18 +16,18 @@ type Options struct {
 type Variadic func(o *Options)
 
 // Configuration represents a default constructor.
-func Configuration(w http.ResponseWriter, r *http.Request, output chan<- *Response, exception chan<- *Exception) *Options {
+func configuration(w http.ResponseWriter, r *http.Request, output chan<- *types.Response, exception chan<- *types.Exception) *Options {
 	return &Options{
 		handler: &Handler{
-			w: w, r: r, output: output, exception: exception,
+			Writer: w, Request: r, Output: output, Error: exception,
 		},
 	}
 }
 
 type Handler struct {
-	w         http.ResponseWriter
-	r         *http.Request
-	output    chan<- *Response
-	exception chan<- *Exception
-	options   *Options
+	Writer  http.ResponseWriter
+	Request *http.Request
+	Output  chan<- *types.Response
+	Error   chan<- *types.Exception
+	Options *Options
 }
