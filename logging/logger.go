@@ -25,7 +25,7 @@ func relevantCaller() runtime.Frame {
 	var frame runtime.Frame
 	for {
 		frame, more := frames.Next()
-		if !strings.HasPrefix(frame.Function, "github.com/x-ethr/server.") {
+		if !strings.HasPrefix(frame.Function, "github.com/x-ethr/server") {
 			return frame
 		}
 		if !more {
