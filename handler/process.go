@@ -11,7 +11,7 @@ import (
 	"github.com/x-ethr/server/handler/types"
 )
 
-type Processor func(c *types.CTX)
+type Processor func(x *types.CTX)
 
 // Validate is an enhanced version of [Process]. Specifically, with a validator.Validate as an argument, users of [Processor] will be able
 // to use [types.CTX] [types.CTX.Input] function to retrieve a hydrated instance of the input data structure from the request's body.
