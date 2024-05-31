@@ -1,7 +1,6 @@
 package output
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -30,7 +29,7 @@ func Process(w http.ResponseWriter, r *http.Request, processor Processor, settin
 			return
 		case response := <-output:
 			if response == nil {
-				slog.ErrorContext(ctx, "Response Returned Unexpected, Null Result", slog.String("path", r.URL.Path), slog.String("method", r.Method))
+				slog.ErrorContext(ctx, "Response Returned Unexpected, Null Result", slog.String("path", r.URL.Path), slog.String("method", r.Method), slog.Any("input", input))
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
@@ -43,11 +42,11 @@ func Process(w http.ResponseWriter, r *http.Request, processor Processor, settin
 			case string, *string:
 				w.Header().Set("Content-Type", "text/plain")
 				if response.Payload == nil {
-					bufio.NewWriter(w).Write([]byte(http.StatusText(http.StatusNoContent)))
+					w.Write([]byte(http.StatusText(http.StatusNoContent)))
 					return
 				}
 
-				bufio.NewWriter(w).Write([]byte(response.Payload.(string)))
+				w.Write([]byte(response.Payload.(string)))
 				return
 			default:
 				w.Header().Set("Content-Type", "application/json")
