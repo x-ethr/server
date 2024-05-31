@@ -181,7 +181,17 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 			}
 
 			if e := json.Unmarshal(output, &value); e != nil {
-				f := frame(3)
+				{
+					f := frame(0)
+
+					line := f.Line
+					file := f.File
+					function := f.Function
+
+					fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Unmarshal Logging Attribute (%s): %s\n", line, file, function, a.Key, a.Value.String())
+				}
+
+				f := frame(4)
 
 				line := f.Line
 				file := f.File
