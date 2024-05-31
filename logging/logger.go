@@ -266,11 +266,25 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 }
 
 func (h *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return h.Handler.WithAttrs(attrs)
+	return &Handler{
+		text:     slog.NewTextHandler(h.writer, h.settings).WithAttrs(attrs).(*slog.TextHandler),
+		json:     slog.NewJSONHandler(h.writer, h.settings).WithAttrs(attrs).(*slog.JSONHandler),
+		writer:   h.writer,
+		service:  h.service,
+		settings: h.settings,
+		logger:   h.logger,
+	}
 }
 
 func (h *Handler) WithGroup(name string) slog.Handler {
-	return h.Handler.WithGroup(name)
+	return &Handler{
+		text:     slog.NewTextHandler(h.writer, h.settings).WithGroup(name).(*slog.TextHandler),
+		json:     slog.NewJSONHandler(h.writer, h.settings).WithGroup(name).(*slog.JSONHandler),
+		writer:   h.writer,
+		service:  h.service,
+		settings: h.settings,
+		logger:   h.logger,
+	}
 }
 
 func Logger(settings ...Variadic) slog.Handler {
@@ -279,7 +293,6 @@ func Logger(settings ...Variadic) slog.Handler {
 		configuration(o)
 	}
 
-	// var instantiation = &Handler{writer: o.Writer, service: o.Service, settings: o.Settings, logger: log.New(o.Writer, "", 0)}
 	var instantiation = &Handler{
 		text:     slog.NewTextHandler(o.Writer, o.Settings),
 		json:     slog.NewJSONHandler(o.Writer, o.Settings),
