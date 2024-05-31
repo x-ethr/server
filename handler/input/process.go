@@ -1,7 +1,6 @@
 package input
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -52,11 +51,11 @@ func Process[Input interface{}](w http.ResponseWriter, r *http.Request, v *valid
 			case string, *string:
 				w.Header().Set("Content-Type", "text/plain")
 				if response.Payload == nil {
-					bufio.NewWriter(w).Write([]byte(http.StatusText(http.StatusNoContent)))
+					w.Write([]byte(http.StatusText(http.StatusNoContent)))
 					return
 				}
 
-				bufio.NewWriter(w).Write([]byte(response.Payload.(string)))
+				w.Write([]byte(response.Payload.(string)))
 				return
 			default:
 				w.Header().Set("Content-Type", "application/json")
