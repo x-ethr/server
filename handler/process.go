@@ -11,7 +11,7 @@ import (
 	"github.com/x-ethr/server/handler/types"
 )
 
-type Processor func(o *types.Options)
+type Processor func(c *types.CTX)
 
 // Validate is an enhanced version of [Process]. Specifically, with a validator.Validate as an argument, users of [Processor] will be able
 // to use [types.CTX] [types.CTX.Input] function to retrieve a hydrated instance of the input data structure from the request's body.
@@ -35,7 +35,7 @@ func Validate(w http.ResponseWriter, r *http.Request, v *validator.Validate, pro
 
 	o.CTX.Context(ctx)
 
-	go processor(o)
+	go processor(o.CTX)
 
 	for {
 		select {
@@ -111,7 +111,7 @@ func Process(w http.ResponseWriter, r *http.Request, processor Processor, settin
 
 	o.CTX.Context(ctx)
 
-	go processor(o)
+	go processor(o.CTX)
 
 	for {
 		select {
