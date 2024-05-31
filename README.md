@@ -26,7 +26,6 @@ package main
 
 import (
     "context"
-    "encoding/json"
     "errors"
     "flag"
     "fmt"
@@ -37,19 +36,22 @@ import (
     "runtime"
     "time"
 
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-
     "github.com/x-ethr/server"
     "github.com/x-ethr/server/logging"
     "github.com/x-ethr/server/middleware"
     "github.com/x-ethr/server/middleware/name"
     "github.com/x-ethr/server/middleware/servername"
     "github.com/x-ethr/server/middleware/timeout"
+    "github.com/x-ethr/server/middleware/tracing"
     "github.com/x-ethr/server/middleware/versioning"
     "github.com/x-ethr/server/telemetry"
+    "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+    "go.opentelemetry.io/otel"
 
-    "go.opentelemetry.io/otel/trace"
+    "authentication-service/internal/api/login"
+    "authentication-service/internal/api/metadata"
+    "authentication-service/internal/api/refresh"
+    "authentication-service/internal/api/registration"
 )
 
 // header is a dynamically linked string value - defaults to "server" - which represents the server name.
@@ -61,90 +63,45 @@ var service string = "service"
 // version is a dynamically linked string value - defaults to "development" - which represents the service's version.
 var version string = "development" // production builds have version dynamically linked
 
-var prefix = map[string]string{
-    (version): "v1", // default version prefix
-}
-
 // ctx, cancel represent the server's runtime context and cancellation handler.
 var ctx, cancel = context.WithCancel(context.Background())
 
 // port represents a cli flag that sets the server listening port
 var port = flag.String("port", "8080", "Server Listening Port.")
 
+var logger *slog.Logger
+
 var (
     tracer = otel.Tracer(service)
 )
 
 func main() {
-    // Create an instance of the custom handler
-    mux := server.New()
+    middlewares := server.Middleware()
 
-    mux.Middleware(middleware.New().Path().Middleware)
-    mux.Middleware(middleware.New().Timeout().Configuration(func(options *timeout.Settings) {
-        options.Timeout = 30 * time.Second
-    }).Middleware)
+    middlewares.Add(middleware.New().Path().Middleware)
+    middlewares.Add(middleware.New().Envoy().Middleware)
+    middlewares.Add(middleware.New().Timeout().Configuration(func(options *timeout.Settings) { options.Timeout = 30 * time.Second }).Middleware)
+    middlewares.Add(middleware.New().Server().Configuration(func(options *servername.Settings) { options.Server = header }).Middleware)
+    middlewares.Add(middleware.New().Service().Configuration(func(options *name.Settings) { options.Service = service }).Middleware)
+    middlewares.Add(middleware.New().Version().Configuration(func(options *versioning.Settings) { options.Version.Service = version }).Middleware)
+    middlewares.Add(middleware.New().Telemetry().Middleware)
 
-    mux.Middleware(middleware.New().Server().Configuration(func(options *servername.Settings) {
-        options.Server = header
-    }).Middleware)
+    middlewares.Add(middleware.New().Tracer().Configuration(func(options *tracing.Settings) { options.Tracer = tracer }).Middleware)
 
-    mux.Middleware(middleware.New().Service().Configuration(func(options *name.Settings) {
-        options.Service = service
-    }).Middleware)
+    mux := http.NewServeMux()
 
-    mux.Middleware(middleware.New().Version().Configuration(func(options *versioning.Settings) {
-        options.Version.Service = version
-    }).Middleware)
+    mux.Handle("GET /", otelhttp.WithRouteTag("/", metadata.Handler))
 
-    mux.Middleware(middleware.New().Telemetry().Middleware)
+    mux.Handle("POST /register", otelhttp.WithRouteTag("/register", registration.Handler))
+    mux.Handle("POST /refresh", otelhttp.WithRouteTag("/refresh", refresh.Handler))
+    mux.Handle("POST /login", otelhttp.WithRouteTag("/login", login.Handler))
 
-    mux.Register(fmt.Sprintf("GET /%s/%s", prefix[version], service), func(w http.ResponseWriter, r *http.Request) {
-        ctx := r.Context()
-
-        resources := telemetry.Resources(ctx, service, version)
-
-        ctx, span := tracer.Start(ctx, fmt.Sprintf("%s - main", service))
-        span.SetAttributes(resources.Attributes()...)
-
-        defer span.End()
-
-        channel := make(chan map[string]interface{}, 1)
-        var process = func(ctx context.Context, span trace.Span, c chan map[string]interface{}) {
-            path := middleware.New().Path().Value(ctx)
-
-            var payload = map[string]interface{}{
-                middleware.New().Service().Value(ctx): map[string]interface{}{
-                    "path":        path,
-                    "service":     middleware.New().Service().Value(ctx),
-                    "version":     middleware.New().Version().Value(ctx).Service,
-                },
-            }
-
-            span.SetAttributes(attribute.String("path", path))
-
-            c <- payload
-        }
-
-        go process(ctx, span, channel)
-
-        select {
-        case <-ctx.Done():
-            return
-        case payload := <-channel:
-            w.Header().Set("Content-Type", "application/json")
-            w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
-            w.WriteHeader(http.StatusOK)
-
-            json.NewEncoder(w).Encode(payload)
-
-            return
-        }
-    })
+    mux.HandleFunc("GET /health", server.Health)
 
     // Start the HTTP server
     slog.Info("Starting Server ...", slog.String("local", fmt.Sprintf("http://localhost:%s", *(port))))
 
-    api := server.Server(ctx, mux, *port)
+    api := server.Server(ctx, mux, middlewares, *port)
 
     // Issue Cancellation Handler
     server.Interrupt(ctx, cancel, api)
@@ -159,6 +116,7 @@ func main() {
             options.Logs.Local = true
         }
     })
+
     if e != nil {
         panic(e)
     }
@@ -192,7 +150,7 @@ func init() {
     }
 
     logging.Level(level)
-
+    slog.SetLogLoggerLevel(level)
     if service == "service" && os.Getenv("CI") != "true" {
         _, file, _, ok := runtime.Caller(0)
         if ok {
@@ -201,7 +159,7 @@ func init() {
     }
 
     handler := logging.Logger(func(o *logging.Options) { o.Service = service })
-    logger := slog.New(handler)
+    logger = slog.New(handler)
     slog.SetDefault(logger)
 }
 ```
