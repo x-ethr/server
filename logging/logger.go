@@ -16,9 +16,7 @@ import (
 	"github.com/x-ethr/color"
 )
 
-// relevantCaller searches the call stack for the first function outside of net/http.
-// The purpose of this function is to provide more helpful error messages.
-func relevantCaller() runtime.Frame {
+func caller() runtime.Frame {
 	pc := make([]uintptr, 16)
 	n := runtime.Callers(1, pc)
 	frames := runtime.CallersFrames(pc[:n])
@@ -33,14 +31,6 @@ func relevantCaller() runtime.Frame {
 		}
 	}
 	return frame
-}
-
-func trace() (int, *runtime.Func, string) {
-	pc := make([]uintptr, 10) // at least 1 entry needed
-	runtime.Callers(2, pc)
-	f := runtime.FuncForPC(pc[0])
-	file, line := f.FileLine(pc[0])
-	return line, f, file
 }
 
 func frame(skipFrames int) runtime.Frame {
@@ -197,7 +187,9 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 		default:
 			output, e := json.Marshal(a.Value.Any())
 			if e != nil {
-				line, f, file := trace()
+				relevant := caller()
+
+				line, f, file := relevant.Line, relevant.Func, relevant.File
 
 				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Marshal Logging Attribute (%s): %s - %v\n", line, file, f.Name(), a.Key, a.Value.String(), e)
 
@@ -205,13 +197,11 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 			}
 
 			if e := json.Unmarshal(output, &value); e != nil {
-				line, f, file := trace()
+				relevant := caller()
 
-				relevant := relevantCaller()
-				line2, f2, file2 := relevant.Line, relevant.Func, relevant.File
+				line, f, file := relevant.Line, relevant.Func, relevant.File
 
 				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Unmarshal Logging Attribute (%s): %s\n", line, file, f.Name(), a.Key, a.Value.String())
-				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Unmarshal Logging Attribute (%s): %s\n", line2, file2, f2.Name(), a.Key, a.Value.String())
 
 				return false
 			}
