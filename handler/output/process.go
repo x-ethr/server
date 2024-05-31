@@ -29,7 +29,7 @@ func Process(w http.ResponseWriter, r *http.Request, processor Processor, settin
 			return
 		case response := <-output:
 			if response == nil {
-				slog.ErrorContext(ctx, "Response Returned Unexpected, Null Result", slog.String("path", r.URL.Path), slog.String("method", r.Method), slog.Any("input", input))
+				slog.ErrorContext(ctx, "Response Returned Unexpected, Null Result", slog.String("path", r.URL.Path), slog.String("method", r.Method))
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
@@ -42,15 +42,24 @@ func Process(w http.ResponseWriter, r *http.Request, processor Processor, settin
 			case string, *string:
 				w.Header().Set("Content-Type", "text/plain")
 				if response.Payload == nil {
-					w.Write([]byte(http.StatusText(http.StatusNoContent)))
+					if size, e := w.Write([]byte(http.StatusText(http.StatusNoContent))); e != nil {
+						slog.ErrorContext(ctx, "Unable to Write Response Body (Text)", slog.String("error", e.Error()), slog.Int("size", size))
+					}
+
 					return
 				}
 
-				w.Write([]byte(response.Payload.(string)))
+				if size, e := w.Write([]byte(response.Payload.(string))); e != nil {
+					slog.ErrorContext(ctx, "Unable to Write Response Body (Text)", slog.String("error", e.Error()), slog.Int("size", size))
+				}
+
 				return
 			default:
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(response.Payload)
+				if e := json.NewEncoder(w).Encode(response.Payload); e != nil {
+					slog.ErrorContext(ctx, "Unable to Write Response Body (JSON)", slog.String("error", e.Error()))
+				}
+
 				return
 			}
 		case e := <-exception:

@@ -51,15 +51,24 @@ func Process[Input interface{}](w http.ResponseWriter, r *http.Request, v *valid
 			case string, *string:
 				w.Header().Set("Content-Type", "text/plain")
 				if response.Payload == nil {
-					w.Write([]byte(http.StatusText(http.StatusNoContent)))
+					if size, e := w.Write([]byte(http.StatusText(http.StatusNoContent))); e != nil {
+						slog.ErrorContext(ctx, "Unable to Write Response Body (Text)", slog.String("error", e.Error()), slog.Int("size", size))
+					}
+
 					return
 				}
 
-				w.Write([]byte(response.Payload.(string)))
+				if size, e := w.Write([]byte(http.StatusText(http.StatusNoContent))); e != nil {
+					slog.ErrorContext(ctx, "Unable to Write Response Body (Text)", slog.String("error", e.Error()), slog.Int("size", size))
+				}
+
 				return
 			default:
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(response.Payload)
+				if e := json.NewEncoder(w).Encode(response.Payload); e != nil {
+					slog.ErrorContext(ctx, "Unable to Write Response Body (JSON)", slog.String("error", e.Error()))
+				}
+				
 				return
 			}
 		case e := <-invalid:
