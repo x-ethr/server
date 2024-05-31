@@ -91,6 +91,9 @@ type Handler struct {
 	json *slog.JSONHandler
 
 	logger *log.Logger
+
+	group      string
+	attributes []slog.Attr
 }
 
 func (h *Handler) Enabled(ctx context.Context, level slog.Level) bool {
@@ -218,11 +221,25 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 	}
 
 	record.Attrs(evaluate)
+	for index := range h.attributes {
+		attribute := h.attributes[index]
+		evaluate(attribute)
+	}
+
 	format := record.Time.Format("[Jan 02 15:04:05.000]")
 	message := color.Color().Cyan(record.Message).String()
 
 	if service := h.service; service != "" && h.logger.Prefix() == "" {
 		literal := color.Color().Bold(color.Color().Red(service).String()).String()
+
+		prefix := fmt.Sprintf("%s ", literal)
+		if group := h.group; group != "" {
+			prefix = fmt.Sprintf("%s (%s) ", literal, group)
+		}
+
+		h.logger.SetPrefix(prefix)
+	} else if group := h.group; group != "" {
+		literal := color.Color().Bold(color.Color().Red(group).String()).String()
 
 		prefix := fmt.Sprintf("%s ", literal)
 
@@ -267,12 +284,13 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 
 func (h *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return &Handler{
-		text:     slog.NewTextHandler(h.writer, h.settings).WithAttrs(attrs).(*slog.TextHandler),
-		json:     slog.NewJSONHandler(h.writer, h.settings).WithAttrs(attrs).(*slog.JSONHandler),
-		writer:   h.writer,
-		service:  h.service,
-		settings: h.settings,
-		logger:   h.logger,
+		text:       slog.NewTextHandler(h.writer, h.settings).WithAttrs(attrs).(*slog.TextHandler),
+		json:       slog.NewJSONHandler(h.writer, h.settings).WithAttrs(attrs).(*slog.JSONHandler),
+		writer:     h.writer,
+		service:    h.service,
+		settings:   h.settings,
+		logger:     h.logger,
+		attributes: attrs,
 	}
 }
 
@@ -284,6 +302,7 @@ func (h *Handler) WithGroup(name string) slog.Handler {
 		service:  h.service,
 		settings: h.settings,
 		logger:   h.logger,
+		group:    name,
 	}
 }
 
@@ -294,12 +313,13 @@ func Logger(settings ...Variadic) slog.Handler {
 	}
 
 	var instantiation = &Handler{
-		text:     slog.NewTextHandler(o.Writer, o.Settings),
-		json:     slog.NewJSONHandler(o.Writer, o.Settings),
-		writer:   o.Writer,
-		service:  o.Service,
-		settings: o.Settings,
-		logger:   log.New(o.Writer, "", 0),
+		text:       slog.NewTextHandler(o.Writer, o.Settings),
+		json:       slog.NewJSONHandler(o.Writer, o.Settings),
+		writer:     o.Writer,
+		service:    o.Service,
+		settings:   o.Settings,
+		logger:     log.New(o.Writer, "", 0),
+		attributes: make([]slog.Attr, 0),
 	}
 
 	if logger.Load() != nil && logger.Load().(string) == "json" {
