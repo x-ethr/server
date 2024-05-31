@@ -9,10 +9,10 @@ import (
 	"github.com/x-ethr/server/handler/types"
 )
 
-func New() *Processor {
+func New() Processor {
 	pointer := new(Processor)
 
-	return pointer
+	return *(pointer)
 }
 
 type Processor func(w http.ResponseWriter, r *http.Request, output chan<- *types.Response, exception chan<- *types.Exception, options *types.Options)
