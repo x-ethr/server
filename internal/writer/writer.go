@@ -11,7 +11,7 @@ type Writer struct {
 	w http.ResponseWriter
 
 	status int
-	buffer *bytes.Buffer
+	buffer bytes.Buffer
 }
 
 func Handle(next http.Handler) http.Handler {
@@ -49,5 +49,5 @@ func (w *Writer) Done() (int64, error) {
 		w.w.WriteHeader(w.status)
 	}
 
-	return io.Copy(w.w, w.buffer)
+	return io.Copy(w.w, &w.buffer)
 }
