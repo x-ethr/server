@@ -173,7 +173,7 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 
 				line := f.Line
 				file := f.File
-				function := f.Func
+				function := f.Function
 
 				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Marshal Logging Attribute (%s): %s - %v\n", line, file, function, a.Key, a.Value.String(), e)
 
@@ -185,7 +185,7 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 
 				line := f.Line
 				file := f.File
-				function := f.Func
+				function := f.Function
 
 				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Unmarshal Logging Attribute (%s): %s\n", line, file, function, a.Key, a.Value.String())
 
