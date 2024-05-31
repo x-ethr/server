@@ -10,10 +10,30 @@ import (
 	"log/slog"
 	"os"
 	"runtime"
+	"strings"
 	"sync/atomic"
 
 	"github.com/x-ethr/color"
 )
+
+// relevantCaller searches the call stack for the first function outside of net/http.
+// The purpose of this function is to provide more helpful error messages.
+func relevantCaller() runtime.Frame {
+	pc := make([]uintptr, 16)
+	n := runtime.Callers(1, pc)
+	frames := runtime.CallersFrames(pc[:n])
+	var frame runtime.Frame
+	for {
+		frame, more := frames.Next()
+		if !strings.HasPrefix(frame.Function, "github.com/x-ethr/server.") {
+			return frame
+		}
+		if !more {
+			break
+		}
+	}
+	return frame
+}
 
 func trace() (int, *runtime.Func, string) {
 	pc := make([]uintptr, 10) // at least 1 entry needed
@@ -187,7 +207,11 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 			if e := json.Unmarshal(output, &value); e != nil {
 				line, f, file := trace()
 
+				relevant := relevantCaller()
+				line2, f2, file2 := relevant.Line, relevant.Func, relevant.File
+
 				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Unmarshal Logging Attribute (%s): %s\n", line, file, f.Name(), a.Key, a.Value.String())
+				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Unmarshal Logging Attribute (%s): %s\n", line2, file2, f2.Name(), a.Key, a.Value.String())
 
 				return false
 			}
