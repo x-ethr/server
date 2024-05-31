@@ -151,7 +151,7 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 			}
 
 			if e := json.Unmarshal(output, &value); e != nil {
-				fmt.Fprintf(os.Stderr, "ERROR - Unable to Unmarshal Logging Attribute: %s\n", a.Value.String())
+				fmt.Fprintf(os.Stderr, "ERROR - Unable to Unmarshal Logging Attribute (%s): %s\n", a.Key, a.Value.String())
 
 				return false
 			}
