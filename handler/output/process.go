@@ -60,7 +60,7 @@ func Process(w http.ResponseWriter, r *http.Request, processor Processor, settin
 				err = fmt.Errorf("N/A")
 			}
 
-			slog.ErrorContext(ctx, "Error While Processing Request", slog.String("error", err.Error()), slog.String("public-message", e.Message), slog.String("internal-message", e.Log), slog.String("path", r.URL.Path), slog.String("method", r.Method))
+			slog.ErrorContext(ctx, "Error While Processing Request", slog.Any("metadata", e.Metadata), slog.String("error", err.Error()), slog.String("public-message", e.Message), slog.String("internal-message", e.Log), slog.String("path", r.URL.Path), slog.String("method", r.Method))
 			http.Error(w, e.Error(), e.Code)
 
 			return
