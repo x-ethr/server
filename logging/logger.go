@@ -15,6 +15,14 @@ import (
 	"github.com/x-ethr/color"
 )
 
+func trace() (int, *runtime.Func, string) {
+	pc := make([]uintptr, 10) // at least 1 entry needed
+	runtime.Callers(2, pc)
+	f := runtime.FuncForPC(pc[0])
+	file, line := f.FileLine(pc[0])
+	return line, f, file
+}
+
 func frame(skipFrames int) runtime.Frame {
 	// We need the frame at index skipFrames+2, since we never want runtime.Callers and getFrame
 	targetFrameIndex := skipFrames + 2
@@ -169,35 +177,17 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 		default:
 			output, e := json.Marshal(a.Value.Any())
 			if e != nil {
-				f := frame(3)
+				line, f, file := trace()
 
-				line := f.Line
-				file := f.File
-				function := f.Function
-
-				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Marshal Logging Attribute (%s): %s - %v\n", line, file, function, a.Key, a.Value.String(), e)
+				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Marshal Logging Attribute (%s): %s - %v\n", line, file, f.Name(), a.Key, a.Value.String(), e)
 
 				return false
 			}
 
 			if e := json.Unmarshal(output, &value); e != nil {
-				{
-					f := frame(0)
+				line, f, file := trace()
 
-					line := f.Line
-					file := f.File
-					function := f.Function
-
-					fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Unmarshal Logging Attribute (%s): %s\n", line, file, function, a.Key, a.Value.String())
-				}
-
-				f := frame(4)
-
-				line := f.Line
-				file := f.File
-				function := f.Function
-
-				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Unmarshal Logging Attribute (%s): %s\n", line, file, function, a.Key, a.Value.String())
+				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Unmarshal Logging Attribute (%s): %s\n", line, file, f.Name(), a.Key, a.Value.String())
 
 				return false
 			}
