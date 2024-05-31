@@ -1,4 +1,4 @@
-package output
+package handler
 
 // // Options is the configuration structure optionally mutated via the [Variadic] constructor used throughout the package.
 // type Options struct {

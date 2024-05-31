@@ -1,4 +1,4 @@
-package output
+package handler
 
 import "github.com/x-ethr/server/handler/types"
 
