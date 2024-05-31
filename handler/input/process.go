@@ -11,10 +11,20 @@ import (
 	"github.com/x-ethr/server/handler/types"
 )
 
-func New[Input interface{}]() Processor[Input] {
+type handler[Input interface{}] struct{}
+
+func (h *handler[Input]) Processor() Processor[Input] {
 	pointer := new(Processor[Input])
 
 	return *(pointer)
+}
+
+type Handler[Input interface{}] interface {
+	Processor() Processor[Input]
+}
+
+func New[Input interface{}]() Handler[Input] {
+	return &handler[Input]{}
 }
 
 type Processor[Input interface{}] func(w http.ResponseWriter, r *http.Request, input *Input, output chan<- *types.Response, exception chan<- *types.Exception, options *types.Options)
