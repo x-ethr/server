@@ -9,10 +9,34 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"runtime"
 	"sync/atomic"
 
 	"github.com/x-ethr/color"
 )
+
+func frame(skipFrames int) runtime.Frame {
+	// We need the frame at index skipFrames+2, since we never want runtime.Callers and getFrame
+	targetFrameIndex := skipFrames + 2
+
+	// Set size to targetFrameIndex+2 to ensure we have room for one more caller than we need
+	programCounters := make([]uintptr, targetFrameIndex+2)
+	n := runtime.Callers(0, programCounters)
+
+	frame := runtime.Frame{Function: "unknown"}
+	if n > 0 {
+		frames := runtime.CallersFrames(programCounters[:n])
+		for more, frameIndex := true, 0; more && frameIndex <= targetFrameIndex; frameIndex++ {
+			var frameCandidate runtime.Frame
+			frameCandidate, more = frames.Next()
+			if frameIndex == targetFrameIndex {
+				frame = frameCandidate
+			}
+		}
+	}
+
+	return frame
+}
 
 // logger represents an atomic pointer to enumeration Format - must be one of ( JSON | Text | Default ).
 var logger atomic.Value // atomic.Pointer[Type]
@@ -145,13 +169,25 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 		default:
 			output, e := json.Marshal(a.Value.Any())
 			if e != nil {
-				fmt.Fprintf(os.Stderr, "ERROR - Unable to Marshal Logging Attribute (%s): %s - %v\n", a.Key, a.Value.String(), e)
+				f := frame(1)
+
+				line := f.Line
+				file := f.File
+				function := f.Func
+
+				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Marshal Logging Attribute (%s): %s - %v\n", line, file, function, a.Key, a.Value.String(), e)
 
 				return false
 			}
 
 			if e := json.Unmarshal(output, &value); e != nil {
-				fmt.Fprintf(os.Stderr, "ERROR - Unable to Unmarshal Logging Attribute (%s): %s\n", a.Key, a.Value.String())
+				f := frame(1)
+
+				line := f.Line
+				file := f.File
+				function := f.Func
+
+				fmt.Fprintf(os.Stderr, "ERROR - (%d) (%s) (%s) Unable to Unmarshal Logging Attribute (%s): %s\n", line, file, function, a.Key, a.Value.String())
 
 				return false
 			}
