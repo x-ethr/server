@@ -230,7 +230,7 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 	}
 
 	var buffer []byte
-	if record.Message == "HTTP(s) Request" || record.Message == "Middleware" {
+	if record.Message == "HTTP(s) Request" || record.Message == "Middleware" || record.Message == "Response Writer" {
 		var e error
 
 		buffer, e = json.Marshal(fields)
@@ -250,8 +250,6 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 
 		partials = bytes.Split(buffer, []byte("}"))
 		buffer = bytes.Join(partials, []byte(" }"))
-
-		// buffer = buffer[1 : len(buffer)-(len([]byte("\n")))]
 	} else {
 		var e error
 

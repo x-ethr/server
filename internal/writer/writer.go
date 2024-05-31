@@ -3,7 +3,7 @@ package writer
 import (
 	"bytes"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 )
 
@@ -16,19 +16,18 @@ type Writer struct {
 
 func Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		instance := &Writer{w: w, status: 200} // default 200 response code
+		defer instance.buffer.Reset()
 
 		next.ServeHTTP(instance, r)
 
-		log.Printf("response size: %d\n", instance.buffer.Len())
-		log.Printf("response status: %v\n", instance.status)
-
 		size, e := instance.Done()
 		if e != nil {
-			log.Println("error while writing response", e)
+			slog.ErrorContext(ctx, "Error Writing Response", slog.String("error", e.Error()))
 		}
 
-		log.Printf("response size: %d\n", size)
+		slog.InfoContext(ctx, "Response Writer", slog.Int64("size", size), slog.Int("status", instance.status))
 	})
 }
 
