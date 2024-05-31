@@ -11,31 +11,10 @@ import (
 	"github.com/x-ethr/server/handler/types"
 )
 
-type handler[Input interface{}] struct{}
+type Processor[Input interface{}] func(handler *Handler[Input])
 
-func (h *handler[Input]) Processor() Processor[Input] {
-	pointer := new(Processor[Input])
-
-	return *(pointer)
-}
-
-type Handler[Input interface{}] interface {
-	Processor() Processor[Input]
-}
-
-func New[Input interface{}]() Handler[Input] {
-	return &handler[Input]{}
-}
-
-type Processor[Input interface{}] func(w http.ResponseWriter, r *http.Request, input *Input, output chan<- *types.Response, exception chan<- *types.Exception, options *types.Options)
-
-func Process[Input interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input], settings ...types.Variadic) {
+func Process[Input interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input], settings ...Variadic[Input]) {
 	ctx := r.Context()
-
-	configuration := types.Configuration()
-	for _, option := range settings {
-		option(configuration)
-	}
 
 	var input Input // only used for logging
 
@@ -46,7 +25,14 @@ func Process[Input interface{}](w http.ResponseWriter, r *http.Request, v *valid
 		return
 	}
 
-	go processor(w, r.WithContext(ctx), &input, output, exception, configuration)
+	o := configuration[Input](w, r, &input, output, exception)
+	for _, option := range settings {
+		option(o)
+	}
+
+	o.handler.Request = o.handler.Request.WithContext(ctx)
+
+	go processor(o.handler)
 
 	for {
 		select {
