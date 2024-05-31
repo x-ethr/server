@@ -8,11 +8,13 @@ import (
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
+	"github.com/x-ethr/server/internal/writer"
 )
 
 // Server initializes a http.Server with application-specific configuration.
 func Server(ctx context.Context, handler http.Handler, middleware *Middlewares, port string) *http.Server {
-	handler = middleware.Handler(handler)
+	handler = writer.Handle(middleware.Handler(handler))
 
 	if v, ok := ctx.Value("server-name").(string); ok {
 		handler = otelhttp.NewHandler(handler, "server", otelhttp.WithServerName(v), otelhttp.WithMessageEvents(otelhttp.ReadEvents, otelhttp.WriteEvents))

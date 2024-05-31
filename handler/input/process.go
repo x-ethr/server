@@ -11,12 +11,12 @@ import (
 	"github.com/x-ethr/server/handler/types"
 )
 
-type Processor[Input interface{}] func(handler *Handler[Input])
+type Processor func(handler *Handler[Input])
 
 func Process[Input interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor[Input], settings ...Variadic[Input]) {
 	ctx := r.Context()
 
-	var input Input // only used for logging
+	var input Input
 
 	output, exception, invalid := channels()
 
