@@ -25,10 +25,9 @@ func Validate(w http.ResponseWriter, r *http.Request, v *validator.Validate, pro
 	var input interface{}
 	if message, validators, e := types.Validate(ctx, v, r.Body, &input); e != nil {
 		invalid <- &types.Invalid{Validators: validators, Message: message, Source: e}
-		return
 	}
 
-	o := types.Configuration(w, r, input, output, exception)
+	o := types.Configuration(w, r, &input, output, exception)
 	for _, option := range settings {
 		option(o)
 	}

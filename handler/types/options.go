@@ -18,7 +18,7 @@ type Options struct {
 type Variadic func(o *Options)
 
 // Configuration represents a default constructor.
-func Configuration(w http.ResponseWriter, r *http.Request, input interface{}, output chan<- *Response, exception chan<- *Exception) *Options {
+func Configuration(w http.ResponseWriter, r *http.Request, input *interface{}, output chan<- *Response, exception chan<- *Exception) *Options {
 	return &Options{
 		CTX: &CTX{
 			w: w, r: r, input: input, output: output, exception: exception,
@@ -68,4 +68,8 @@ func (c *CTX) Complete(response *Response) {
 func (c *CTX) Error(exception *Exception) {
 	c.exception <- exception
 	return
+}
+
+func (c *CTX) Channels() (response chan<- *Response, exception chan<- *Exception) {
+	return c.output, c.exception
 }
