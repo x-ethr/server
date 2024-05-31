@@ -15,14 +15,14 @@ type Processor func(x *types.CTX)
 
 // Validate is an enhanced version of [Process]. Specifically, with a validator.Validate as an argument, users of [Processor] will be able
 // to use [types.CTX] [types.CTX.Input] function to retrieve a hydrated instance of the input data structure from the request's body.
-func Validate(w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor, settings ...types.Variadic) {
+func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor, settings ...types.Variadic) {
 	ctx := r.Context()
 
 	output, exception := channels()
 
 	invalid := make(chan *types.Invalid)
 
-	var input interface{}
+	var input Input
 	if message, validators, e := types.Validate(ctx, v, r.Body, &input); e != nil {
 		invalid <- &types.Invalid{Validators: validators, Message: message, Source: e}
 	}
