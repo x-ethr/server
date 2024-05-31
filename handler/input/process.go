@@ -72,7 +72,7 @@ func Process[Input interface{}](w http.ResponseWriter, r *http.Request, v *valid
 				err = fmt.Errorf("N/A")
 			}
 
-			slog.ErrorContext(ctx, "Error While Processing Request", slog.String("error", err.Error()), slog.String("internal-message", e.Log), slog.String("path", r.URL.Path), slog.String("method", r.Method), slog.Any("input", input))
+			slog.ErrorContext(ctx, "Error While Processing Request", slog.String("error", err.Error()), slog.String("public-message", e.Message), slog.String("internal-message", e.Log), slog.String("path", r.URL.Path), slog.String("method", r.Method))
 			http.Error(w, e.Error(), e.Code)
 
 			return
