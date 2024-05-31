@@ -169,7 +169,7 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 		default:
 			output, e := json.Marshal(a.Value.Any())
 			if e != nil {
-				f := frame(2)
+				f := frame(3)
 
 				line := f.Line
 				file := f.File
@@ -181,7 +181,7 @@ func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
 			}
 
 			if e := json.Unmarshal(output, &value); e != nil {
-				f := frame(2)
+				f := frame(3)
 
 				line := f.Line
 				file := f.File
