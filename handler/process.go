@@ -50,7 +50,7 @@ func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *vali
 			e.Response(w)
 			return
 		case e := <-exception:
-			throw(ctx, w, e)
+			throw(ctx, w, r, e)
 			return
 		}
 	}
@@ -83,19 +83,19 @@ func Process(w http.ResponseWriter, r *http.Request, processor Processor, settin
 			evaluate(ctx, w, r, response)
 			return
 		case e := <-exception:
-			throw(ctx, w, e)
+			throw(ctx, w, r, e)
 			return
 		}
 	}
 }
 
-func throw(ctx context.Context, w http.ResponseWriter, e *types.Exception) {
+func throw(ctx context.Context, w http.ResponseWriter, request *http.Request, e *types.Exception) {
 	var err error = e.Source
 	if e.Source == nil {
 		err = fmt.Errorf("N/A")
 	}
 
-	slog.ErrorContext(ctx, "Error While Processing Request", slog.Any("metadata", e.Metadata), slog.String("error", err.Error()), slog.String("public", e.Message), slog.String("internal", e.Log), slog.String("path", r.URL.Path), slog.String("method", r.Method))
+	slog.ErrorContext(ctx, "Error While Processing Request", slog.Any("metadata", e.Metadata), slog.String("error", err.Error()), slog.String("public", e.Message), slog.String("internal", e.Log), slog.String("path", request.URL.Path), slog.String("method", request.Method))
 	http.Error(w, e.Error(), e.Code)
 
 	return
