@@ -13,13 +13,13 @@ import (
 	"github.com/x-ethr/server/logging"
 )
 
-type Processor func(x *types.CTX)
+type Handle func(x *types.CTX)
 
 // Validate is an enhanced version of [Process]. Specifically, with a validator.Validate as an argument, users of [Processor] will be able
 // to use [types.CTX] [types.CTX.Input] function to retrieve a hydrated instance of the input data structure from the request's body.
 //
 //   - The [types.CTX.Input] value will be a pointer to the [Input] Generic specification from the caller.
-func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, processor Processor, settings ...types.Variadic) {
+func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, handle Handle, settings ...types.Variadic) {
 	ctx := r.Context()
 
 	output, exception := channels()
@@ -38,7 +38,7 @@ func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *vali
 
 	o.CTX.Context(ctx)
 
-	go processor(o.CTX)
+	go handle(o.CTX)
 
 	for {
 		select {
@@ -63,7 +63,7 @@ func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *vali
 // creates an options object, and starts a goroutine to execute the processor function. It then enters a loop,
 // waiting for either a response or an exception. If a response is received, it writes the response to the writer
 // and returns. If an exception is received, it logs the error and returns an HTTP error with the corresponding status code.
-func Process(w http.ResponseWriter, r *http.Request, handle Processor, settings ...types.Variadic) {
+func Process(w http.ResponseWriter, r *http.Request, handle Handle, settings ...types.Variadic) {
 	ctx := r.Context()
 
 	output, exception := channels()
