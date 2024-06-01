@@ -115,6 +115,8 @@ func (h *Handler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
+	record.AddAttrs(h.attributes...)
+
 	if h.t == "json" {
 		return h.json.Handle(ctx, record)
 	}
