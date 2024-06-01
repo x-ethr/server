@@ -41,12 +41,10 @@ func (w *Writer) Write(bytes []byte) (int, error) {
 
 func (w *Writer) WriteHeader(status int) {
 	w.status = status
+
+	w.w.WriteHeader(status)
 }
 
 func (w *Writer) Done() (int64, error) {
-	if w.status > 0 {
-		w.w.WriteHeader(w.status)
-	}
-
 	return io.Copy(w.w, &w.buffer)
 }

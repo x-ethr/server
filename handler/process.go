@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/x-ethr/server/handler/types"
+	"github.com/x-ethr/server/logging"
 )
 
 type Processor func(x *types.CTX)
@@ -123,7 +124,7 @@ func Process(w http.ResponseWriter, r *http.Request, processor Processor, settin
 				return
 			}
 
-			slog.DebugContext(ctx, "Successfully Processed Request", slog.Any("response", response))
+			slog.Log(ctx, logging.Trace, "Successfully Processed Request", slog.Any("response", response))
 
 			w.WriteHeader(response.Code)
 
