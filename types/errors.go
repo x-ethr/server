@@ -56,7 +56,7 @@ func (i *Invalid) Response(w http.ResponseWriter) {
 	http.Error(w, i.Error(), http.StatusServiceUnavailable)
 }
 
-// Error returns a string representation of the Exception. If the Exception's Message is empty,
+// Exception returns a string representation of the Exception. If the Exception's Message is empty,
 // it returns the standard HTTP status-text for the given code.
 type Exception struct {
 	Code    int    `json:"code,omitempty"`    // Code represents an http status-code.
