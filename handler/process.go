@@ -59,13 +59,13 @@ func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *vali
 					w.WriteHeader(http.StatusNoContent)
 					slog.WarnContext(ctx, "No Content from Response", slog.Any("response", response))
 					if size, e := w.Write([]byte(http.StatusText(http.StatusNoContent))); e != nil {
-						slog.ErrorContext(ctx, "Unable to Write Response Body (Text)", slog.String("error", e.Error()), slog.Int("size", size))
+						slog.ErrorContext(ctx, "Unable to Write Response Body (Text, No-Content)", slog.String("error", e.Error()), slog.Int("size", size))
 					}
 
 					return
 				}
 
-				if size, e := w.Write([]byte(http.StatusText(http.StatusNoContent))); e != nil {
+				if size, e := w.Write([]byte(response.Payload.(string))); e != nil {
 					slog.ErrorContext(ctx, "Unable to Write Response Body (Text)", slog.String("error", e.Error()), slog.Int("size", size))
 				}
 
