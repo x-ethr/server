@@ -28,7 +28,7 @@ func processor(x *types.CTX) {
 		},
 	}
 
-	x.Complete(&types.Response{Code: http.StatusOK, Payload: payload})
+	x.Complete(&types.Response{Status: http.StatusOK, Payload: payload})
 	return
 }
 

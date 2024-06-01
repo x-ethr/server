@@ -127,7 +127,7 @@ func evaluate(ctx context.Context, w http.ResponseWriter, request *http.Request,
 
 	slog.Log(ctx, logging.Trace, "Successfully Processed Request", slog.Any("response", response))
 
-	w.WriteHeader(response.Code)
+	w.WriteHeader(response.Status)
 
 	switch response.Payload.(type) {
 	case []byte:
