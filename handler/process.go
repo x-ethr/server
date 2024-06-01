@@ -48,7 +48,7 @@ func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *vali
 				return
 			}
 
-			slog.DebugContext(ctx, "Successfully Processed Request", slog.Any("response", response))
+			slog.Log(ctx, logging.Trace, "Successfully Processed Request", slog.Any("response", response))
 
 			w.WriteHeader(response.Code)
 
