@@ -118,7 +118,7 @@ commit-minor: bump-minor
 	@git push origin "v$(version)"
 	@echo "$(green-bold)Published Tag$(reset): $(version)"
 
-minor-release: commit-minor
+minor-release: commit-minor update
 
 # --> major
 
@@ -139,4 +139,4 @@ commit-major: bump-major
 	@git push origin "v$(version)"
 	@echo "$(green-bold)Published Tag$(reset): $(version)"
 
-major-release: commit-major
+major-release: commit-major update
