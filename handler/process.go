@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -42,42 +43,8 @@ func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *vali
 		case <-ctx.Done():
 			return
 		case response := <-output:
-			if response == nil {
-				slog.ErrorContext(ctx, "Response Returned Unexpected, Null Result", slog.String("path", r.URL.Path), slog.String("method", r.Method), slog.Any("input", input))
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-
-			slog.Log(ctx, logging.Trace, "Successfully Processed Request", slog.Any("response", response))
-
-			w.WriteHeader(response.Code)
-
-			switch response.Payload.(type) {
-			case string, *string:
-				w.Header().Set("Content-Type", "text/plain")
-				if response.Payload == nil {
-					w.WriteHeader(http.StatusNoContent)
-					slog.WarnContext(ctx, "No Content from Response", slog.Any("response", response))
-					if size, e := w.Write([]byte(http.StatusText(http.StatusNoContent))); e != nil {
-						slog.ErrorContext(ctx, "Unable to Write Response Body (Text, No-Content)", slog.String("error", e.Error()), slog.Int("size", size))
-					}
-
-					return
-				}
-
-				if size, e := w.Write([]byte(response.Payload.(string))); e != nil {
-					slog.ErrorContext(ctx, "Unable to Write Response Body (Text)", slog.String("error", e.Error()), slog.Int("size", size))
-				}
-
-				return
-			default:
-				w.Header().Set("Content-Type", "application/json")
-				if e := json.NewEncoder(w).Encode(response.Payload); e != nil {
-					slog.ErrorContext(ctx, "Unable to Write Response Body (JSON)", slog.String("error", e.Error()))
-				}
-
-				return
-			}
+			evaluate(ctx, w, r, response)
+			return
 		case e := <-invalid:
 			slog.WarnContext(ctx, "Invalid Request", slog.String("error", e.Error()), slog.String("path", r.URL.Path), slog.String("method", r.Method), slog.Any("input", input))
 			e.Response(w)
@@ -120,40 +87,8 @@ func Process(w http.ResponseWriter, r *http.Request, processor Processor, settin
 		case <-ctx.Done():
 			return
 		case response := <-output:
-			if response == nil {
-				slog.ErrorContext(ctx, "Response Returned Unexpected, Null Result", slog.String("path", r.URL.Path), slog.String("method", r.Method))
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-
-			slog.Log(ctx, logging.Trace, "Successfully Processed Request", slog.Any("response", response))
-
-			w.WriteHeader(response.Code)
-
-			switch response.Payload.(type) {
-			case string, *string:
-				w.Header().Set("Content-Type", "text/plain")
-				if response.Payload == nil {
-					if size, e := w.Write([]byte(http.StatusText(http.StatusNoContent))); e != nil {
-						slog.ErrorContext(ctx, "Unable to Write Response Body (Text)", slog.String("error", e.Error()), slog.Int("size", size))
-					}
-
-					return
-				}
-
-				if size, e := w.Write([]byte(response.Payload.(string))); e != nil {
-					slog.ErrorContext(ctx, "Unable to Write Response Body (Text)", slog.String("error", e.Error()), slog.Int("size", size))
-				}
-
-				return
-			default:
-				w.Header().Set("Content-Type", "application/json")
-				if e := json.NewEncoder(w).Encode(response.Payload); e != nil {
-					slog.ErrorContext(ctx, "Unable to Write Response Body (JSON)", slog.String("error", e.Error()))
-				}
-
-				return
-			}
+			evaluate(ctx, w, r, response)
+			return
 		case e := <-exception:
 			var err error = e.Source
 			if e.Source == nil {
@@ -165,5 +100,84 @@ func Process(w http.ResponseWriter, r *http.Request, processor Processor, settin
 
 			return
 		}
+	}
+}
+
+func evaluate(ctx context.Context, w http.ResponseWriter, request *http.Request, response *types.Response) {
+	if response == nil {
+		slog.ErrorContext(ctx, "Response Returned Unexpected, Null Result", slog.String("path", request.URL.Path), slog.String("method", request.Method))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	slog.Log(ctx, logging.Trace, "Successfully Processed Request", slog.Any("response", response))
+
+	w.WriteHeader(response.Code)
+
+	switch response.Payload.(type) {
+	case []byte:
+		value := response.Payload.([]byte)
+		w.Header().Set("Content-Type", "text/plain")
+
+		if value == nil {
+			w.WriteHeader(http.StatusNoContent)
+			slog.WarnContext(ctx, "No Content from Response", slog.Any("response", response))
+			if size, e := w.Write([]byte(http.StatusText(http.StatusNoContent))); e != nil {
+				slog.ErrorContext(ctx, "Unable to Write Response Body (Text, No-Content)", slog.String("error", e.Error()), slog.Int("size", size))
+			}
+
+			return
+		}
+
+		if size, e := w.Write(value); e != nil {
+			slog.ErrorContext(ctx, "Unable to Write Response Body (Text)", slog.String("error", e.Error()), slog.Int("size", size))
+		}
+
+		return
+	case string:
+		value := response.Payload.(string)
+		w.Header().Set("Content-Type", "text/plain")
+
+		if value == "" {
+			w.WriteHeader(http.StatusNoContent)
+			slog.WarnContext(ctx, "No Content from Response", slog.Any("response", response))
+			if size, e := w.Write([]byte(http.StatusText(http.StatusNoContent))); e != nil {
+				slog.ErrorContext(ctx, "Unable to Write Response Body (Text, No-Content)", slog.String("error", e.Error()), slog.Int("size", size))
+			}
+
+			return
+		}
+
+		if size, e := w.Write([]byte(value)); e != nil {
+			slog.ErrorContext(ctx, "Unable to Write Response Body (Text)", slog.String("error", e.Error()), slog.Int("size", size))
+		}
+
+		return
+	case *string:
+		value := response.Payload.(*string)
+		w.Header().Set("Content-Type", "text/plain")
+
+		if value == nil {
+			w.WriteHeader(http.StatusNoContent)
+			slog.WarnContext(ctx, "No Content from Response", slog.Any("response", response))
+			if size, e := w.Write([]byte(http.StatusText(http.StatusNoContent))); e != nil {
+				slog.ErrorContext(ctx, "Unable to Write Response Body (Text, No-Content)", slog.String("error", e.Error()), slog.Int("size", size))
+			}
+
+			return
+		}
+
+		if size, e := w.Write([]byte(*value)); e != nil {
+			slog.ErrorContext(ctx, "Unable to Write Response Body (Text)", slog.String("error", e.Error()), slog.Int("size", size))
+		}
+
+		return
+	default:
+		w.Header().Set("Content-Type", "application/json")
+		if e := json.NewEncoder(w).Encode(response.Payload); e != nil {
+			slog.ErrorContext(ctx, "Unable to Write Response Body (JSON)", slog.String("error", e.Error()))
+		}
+
+		return
 	}
 }
