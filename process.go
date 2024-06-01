@@ -1,4 +1,4 @@
-package handler
+package server
 
 import (
 	"context"
@@ -9,10 +9,25 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/x-ethr/server/handler/types"
 	"github.com/x-ethr/server/logging"
+	"github.com/x-ethr/server/types"
 )
 
+// Handle represents a function type that takes a pointer to [types.CTX] as an argument.
+//
+//   - The function is used to handle the processing of an HTTP request and produce a response.
+//   - The function can be used as a parameter in functions like [Validate] and [Process].
+//
+// Example: @TODO write real example
+//
+//	    func MyHandle(x *types.CTX) {
+//			   // handle the request and produce a response
+//	    }
+//	    // usage in Validate function
+//	    Validate(w http.ResponseWriter, r *http.Request, v *validator.Validate, handle Handle, settings ...types.Variadic)
+//
+//	    // usage in Process function
+//	    Process(w http.ResponseWriter, r *http.Request, handle Handle, settings ...types.Variadic)
 type Handle func(x *types.CTX)
 
 // Validate is an enhanced version of [Process]. Specifically, with a validator.Validate as an argument, users of [Processor] will be able

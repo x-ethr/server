@@ -6,6 +6,13 @@ import (
 	"net/http"
 )
 
+// Invalid represents an error resulting from failed validation.
+//
+//   - Message: the validation's string error. If specified, the code must be [http.StatusUnprocessableEntity]
+//     or [http.StatusServiceUnavailable]. If the message is "Internal Validation Error",
+//     then the validator for the given request input is invalid.
+//   - Validators: a map of field names to validation results.
+//   - Source: the source error that caused the invalidation.
 type Invalid struct {
 	// Message represents the validation's string error.
 	//
@@ -29,6 +36,10 @@ func (i *Invalid) Error() string {
 	return exception
 }
 
+// Response - If Validators are present, encode them as JSON response with status code 400.
+// Otherwise, if Message is present and not equal to "Internal Validation Error",
+// respond with status code 422 (Unprocessable Entity).
+// Otherwise, respond with status code 503 (Service Unavailable).
 func (i *Invalid) Response(w http.ResponseWriter) {
 	if i.Validators != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -45,6 +56,8 @@ func (i *Invalid) Response(w http.ResponseWriter) {
 	http.Error(w, i.Error(), http.StatusServiceUnavailable)
 }
 
+// Error returns a string representation of the Exception. If the Exception's Message is empty,
+// it returns the standard HTTP status-text for the given code.
 type Exception struct {
 	Code    int    `json:"code,omitempty"`    // Code represents an http status-code.
 	Message string `json:"message,omitempty"` // Message represents an http status-message

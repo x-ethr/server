@@ -26,6 +26,7 @@ func Configuration(w http.ResponseWriter, r *http.Request, input interface{}, ou
 	}
 }
 
+// CTX represents a context for handling HTTP requests.
 type CTX struct {
 	w         http.ResponseWriter
 	r         *http.Request
@@ -34,15 +35,19 @@ type CTX struct {
 	exception chan<- *Exception
 }
 
+// Writer returns the http.ResponseWriter associated with the CTX object.
+// This allows direct access to the underlying response writer to modify the response.
 func (c *CTX) Writer() http.ResponseWriter {
 	return c.w
 }
 
-// Context updates the underlying request's context.
+// Context sets the context for the CTX object by updating the request's context with the provided context.
 func (c *CTX) Context(ctx context.Context) {
 	c.r = c.r.WithContext(ctx)
 }
 
+// Request returns the http.Request associated with the CTX object.
+// This allows direct access to the underlying request to access request data and headers.
 func (c *CTX) Request() *http.Request {
 	return c.r
 }
@@ -68,8 +73,4 @@ func (c *CTX) Complete(response *Response) {
 func (c *CTX) Error(exception *Exception) {
 	c.exception <- exception
 	return
-}
-
-func (c *CTX) Channels() (response chan<- *Response, exception chan<- *Exception) {
-	return c.output, c.exception
 }

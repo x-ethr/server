@@ -5,9 +5,9 @@ import (
 
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/x-ethr/server/handler"
-	"github.com/x-ethr/server/handler/types"
+	"github.com/x-ethr/server"
 	"github.com/x-ethr/server/middleware"
+	"github.com/x-ethr/server/types"
 )
 
 func processor(x *types.CTX) {
@@ -34,7 +34,7 @@ func processor(x *types.CTX) {
 
 // Handler returns metadata service-related information.
 var Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	handler.Process(w, r, processor)
+	server.Process(w, r, processor)
 
 	return
 })

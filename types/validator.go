@@ -11,18 +11,38 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// Validators is a type that represents a map of string keys to Validator values.
+// Each key-value pair in the map corresponds to a validation check for a specific field.
+// The string key is the field name, and the Validator value contains information about the validation result.
 type Validators map[string]Validator
 
+// Validator is a type that represents a validation result for a specific field.
+// It contains information about the validated value, validity, and an optional message.
+//
+//   - The [Validator.Value] field stores the value that was validated.
+//   - The [Validator.Valid] field indicates whether the validation check was successful or not.
+//   - The [Validator.Message] field holds an optional message providing additional information about the validation result.
 type Validator struct {
-	Value   interface{} `json:"value,omitempty"`
-	Valid   bool        `json:"valid"`
-	Message string      `json:"message"`
+	Value   interface{} `json:"value,omitempty"` // Value is the value that was validated.
+	Valid   bool        `json:"valid"`           // Valid is a boolean field indicating whether the validation check was successful or not.
+	Message string      `json:"message"`         // Message is a field in the Validator struct that holds an optional message providing additional information about the validation result.
 }
 
+// Helper is an interface that defines a single method, Help().
+// Help() returns a map of string keys to Validator values, representing validation checks for specific fields.
 type Helper interface {
-	Help() Validators
+	Help() Validators // Help is a method of the Helper interface that returns a map of string keys to Validator values.
 }
 
+// Validate is a function that takes a context, validator, request body reader, and data interface as arguments.
+// It performs the following steps:
+// 1. Unmarshals the request body into the data interface.
+// 2. Validates the data using the validator.
+// 3. If there are validation errors, logs each error and returns an appropriate response.
+// 4. If the data implements the Helper interface, returns the result of the Help method.
+// 5. Logs the data for debugging purposes.
+// 6. Returns nil if there were no exceptions generated.
+// The function returns a string message, a map of Validators, and an error.
 func Validate(ctx context.Context, v *validator.Validate, body io.Reader, data interface{}) (string, Validators, error) {
 	// invalid describes an invalid argument passed to `Struct`, `StructExcept`, StructPartial` or `Field`
 	var invalid *validator.InvalidValidationError
