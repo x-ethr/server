@@ -18,10 +18,10 @@ type Options struct {
 type Variadic func(o *Options)
 
 // Configuration represents a default constructor.
-func Configuration(w http.ResponseWriter, r *http.Request, input interface{}, output chan<- *Response, exception chan<- *Exception) *Options {
+func Configuration(w http.ResponseWriter, r *http.Request, input interface{}, output chan<- *Response, redirect chan<- *Redirect, exception chan<- *Exception) *Options {
 	return &Options{
 		CTX: &CTX{
-			w: w, r: r, input: input, output: output, exception: exception,
+			w: w, r: r, input: input, output: output, redirect: redirect, exception: exception,
 		},
 	}
 }
@@ -32,6 +32,7 @@ type CTX struct {
 	r         *http.Request
 	input     interface{}
 	output    chan<- *Response
+	redirect  chan<- *Redirect
 	exception chan<- *Exception
 }
 
@@ -66,6 +67,12 @@ func (c *CTX) Input() (interface{}, error) {
 // Complete is a wrapper around the channel *Response. It's up to consumers to return immediately following a call to [CTX.Complete].
 func (c *CTX) Complete(response *Response) {
 	c.output <- response
+	return
+}
+
+// Redirect is a wrapper around the channel *Redirect. It's up to consumers to return immediately following a call to [CTX.Redirect].
+func (c *CTX) Redirect(response *Redirect) {
+	c.redirect <- response
 	return
 }
 

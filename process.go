@@ -37,7 +37,7 @@ type Handle func(x *types.CTX)
 func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *validator.Validate, handle Handle, settings ...types.Variadic) {
 	ctx := r.Context()
 
-	output, exception := channels()
+	output, redirect, exception := channels()
 
 	invalid := make(chan *types.Invalid)
 
@@ -46,7 +46,7 @@ func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *vali
 		invalid <- &types.Invalid{Validators: validators, Message: message, Source: e}
 	}
 
-	o := types.Configuration(w, r, &input, output, exception)
+	o := types.Configuration(w, r, nil, output, redirect, exception)
 	for _, option := range settings {
 		option(o)
 	}
@@ -61,6 +61,9 @@ func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *vali
 			return
 		case response := <-output:
 			evaluate(ctx, w, r, response)
+			return
+		case response := <-redirect:
+			redirection(ctx, w, r, response)
 			return
 		case e := <-invalid:
 			slog.WarnContext(ctx, "Invalid Request", slog.String("error", e.Error()), slog.String("path", r.URL.Path), slog.String("method", r.Method), slog.Any("input", input))
@@ -81,9 +84,9 @@ func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *vali
 func Process(w http.ResponseWriter, r *http.Request, handle Handle, settings ...types.Variadic) {
 	ctx := r.Context()
 
-	output, exception := channels()
+	output, redirect, exception := channels()
 
-	o := types.Configuration(w, r, nil, output, exception)
+	o := types.Configuration(w, r, nil, output, redirect, exception)
 	for _, option := range settings {
 		option(o)
 	}
@@ -98,6 +101,9 @@ func Process(w http.ResponseWriter, r *http.Request, handle Handle, settings ...
 			return
 		case response := <-output:
 			evaluate(ctx, w, r, response)
+			return
+		case response := <-redirect:
+			redirection(ctx, w, r, response)
 			return
 		case e := <-exception:
 			throw(ctx, w, r, e)
@@ -115,6 +121,19 @@ func throw(ctx context.Context, w http.ResponseWriter, request *http.Request, e 
 	slog.ErrorContext(ctx, "Error While Processing Request", slog.Any("metadata", e.Metadata), slog.String("error", err.Error()), slog.String("public", e.Message), slog.String("internal", e.Log), slog.String("path", request.URL.Path), slog.String("method", request.Method))
 	http.Error(w, e.Error(), e.Code)
 
+	return
+}
+
+func redirection(ctx context.Context, w http.ResponseWriter, request *http.Request, redirect *types.Redirect) {
+	if redirect == nil {
+		slog.ErrorContext(ctx, "Redirect Returned Unexpected, Null Result", slog.String("path", request.URL.Path), slog.String("method", request.Method))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	slog.Log(ctx, logging.Trace, "Successfully Processed Redirect", slog.Any("redirect", redirect))
+
+	http.Redirect(w, request, redirect.URL, redirect.Status)
 	return
 }
 
