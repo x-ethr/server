@@ -129,6 +129,14 @@ func redirection(ctx context.Context, w http.ResponseWriter, request *http.Reque
 		slog.ErrorContext(ctx, "Redirect Returned Unexpected, Null Result", slog.String("path", request.URL.Path), slog.String("method", request.Method))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
+	} else if redirect.Status >= 400 && redirect.Status < 300 {
+		slog.ErrorContext(ctx, "Redirect Returned Unexpected, Invalid Status Code", slog.Int("status", redirect.Status))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	} else if redirect.URL == "" {
+		slog.ErrorContext(ctx, "Redirect Returned Invalid URL", slog.String("status", redirect.URL))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	slog.Log(ctx, logging.Trace, "Successfully Processed Redirect", slog.Any("redirect", redirect))
