@@ -73,7 +73,7 @@ func Test(t *testing.T) {
 
 				comparator := fmt.Sprintf("%s\n", "{}")
 				if !(strings.HasSuffix(w.String(), comparator)) {
-					t.Errorf("Log Output Should Contain Suffice ({}), Received: %s", w.String())
+					t.Errorf("Log Output Should Contain Suffix ({}), Received: %s", w.String())
 				}
 
 				t.Logf("Success: %s, %s", t.Name(), w.String())
@@ -206,6 +206,90 @@ func Test(t *testing.T) {
 					t.Logf("Success: %s, %s", t.Name(), w.String())
 				}
 			})
+		})
+		t.Run("With-Attributes", func(t *testing.T) {
+			const level = slog.Level(0)
+
+			logging.Level(logging.Info)
+
+			var w bytes.Buffer
+
+			handler := logging.Logger(func(o *logging.Options) { o.Writer = &w })
+			handler = handler.WithAttrs([]slog.Attr{slog.String("key", "value")})
+			instance := slog.New(handler)
+			slog.SetDefault(instance)
+
+			slog.Log(ctx, level, "Test Message", slog.String("hello", "world"))
+
+			if !(strings.Contains(w.String(), "\"key\": \"value\"")) {
+				t.Errorf("Expected \"key\": \"value\", Received: %s", w.String())
+			} else {
+				t.Logf("Success: %s, %s", t.Name(), w.String())
+			}
+		})
+
+		t.Run("With-Group", func(t *testing.T) {
+			const level = slog.Level(0)
+
+			logging.Level(logging.Info)
+
+			var w bytes.Buffer
+
+			handler := logging.Logger(func(o *logging.Options) { o.Writer = &w })
+			handler = handler.WithGroup("test")
+			instance := slog.New(handler)
+			slog.SetDefault(instance)
+
+			slog.Log(ctx, level, "Test Message", slog.String("hello", "world"))
+
+			if !(strings.Contains(w.String(), "test")) {
+				t.Errorf("Expected \"test\", Received: %s", w.String())
+			} else {
+				t.Logf("Success: %s, %s", t.Name(), w.String())
+			}
+		})
+
+		t.Run("With-Service-Group", func(t *testing.T) {
+			const level = slog.Level(0)
+
+			logging.Level(logging.Info)
+
+			var w bytes.Buffer
+
+			handler := logging.Logger(func(o *logging.Options) { o.Writer = &w; o.Service = "service" })
+			handler = handler.WithGroup("test")
+			instance := slog.New(handler)
+			slog.SetDefault(instance)
+
+			slog.Log(ctx, level, "Test Message", slog.String("hello", "world"))
+
+			if !(strings.Contains(w.String(), "service (test)")) {
+				t.Errorf("Expected \"service (test)\", Received: %s", w.String())
+			} else {
+				t.Logf("Success: %s, %s", t.Name(), w.String())
+			}
+		})
+
+		t.Run("Instance-With-Service-Group", func(t *testing.T) {
+			const level = slog.Level(0)
+
+			logging.Level(logging.Info)
+
+			var w bytes.Buffer
+
+			handler := logging.Logger(func(o *logging.Options) { o.Writer = &w; o.Service = "service" })
+			instance := slog.New(handler)
+			slog.SetDefault(instance)
+
+			logger := slog.Default().WithGroup("test")
+
+			logger.Log(ctx, level, "Test Message", slog.String("hello", "world"))
+
+			if !(strings.Contains(w.String(), "service (test)")) {
+				t.Errorf("Expected \"service (test)\", Received: %s", w.String())
+			} else {
+				t.Logf("Success: %s, %s", t.Name(), w.String())
+			}
 		})
 	})
 }
