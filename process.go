@@ -48,7 +48,7 @@ func Validate[Input interface{}](w http.ResponseWriter, r *http.Request, v *vali
 
 	slog.DebugContext(ctx, "Request", slog.Any("input", input))
 
-	o := types.Configuration(w, r, nil, output, redirect, exception)
+	o := types.Configuration(w, r, input, output, redirect, exception)
 	for _, option := range settings {
 		option(o)
 	}
