@@ -47,6 +47,9 @@ type Store interface {
 
 	// Tracer represents the context.Context key: "tracer". See [tracing.Implementation] for the middleware.
 	Tracer() Key
+
+	// State represents the context.Context key: "state". See [state.Implementation] for the middleware.
+	State() Key
 }
 
 type store struct{}
@@ -78,6 +81,8 @@ func (s store) Timeout() Key {
 func (s store) Envoy() Key { return "envoy" }
 
 func (s store) Tracer() Key { return "tracer" }
+
+func (s store) State() Key { return "state" }
 
 var s = store{}
 
